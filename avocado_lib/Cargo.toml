@@ -1,0 +1,36 @@
+[package]
+name = "avocado_lib"
+version = "0.1.0"
+edition = "2021"
+description = "Contains the actual AVocado library codes; don't use directly."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/AvantTeam/avocado"
+
+[features]
+asset = []
+winit = ["dep:winit", "dep:wgpu"]
+log = ["dep:env_logger"]
+
+[dependencies]
+env_logger = { version = "0.9", optional = true }
+winit = { version = "0.27", optional = true }
+wgpu = { version = "0.14", optional = true }
+
+bevy_ecs = "0.9"
+bevy_math = "0.9"
+bevy_ptr = "0.9"
+bevy_reflect = "0.9"
+bevy_tasks = "0.9"
+bevy_utils = "0.9"
+iyes_loopless = { version = "0.9", default-features = false, features = ["states"] }
+
+bytemuck = "1.12"
+crossbeam-channel = "0.5"
+derive_more = "0.99"
+downcast-rs = "1.2"
+log = "0.4"
+parking_lot = "0.12"
+pollster = "0.2"
+smallvec = { version = "1.10", features = ["serde", "union", "const_generics"] }
+thiserror = "1.0"

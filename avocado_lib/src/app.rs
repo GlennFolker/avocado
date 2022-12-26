@@ -15,49 +15,64 @@ impl App {
         }
     }
 
+    /// Creates an empty, unusable `App` instance. Only use this to deallocate the previous instance.
+    pub fn empty() -> Self {
+        Self {
+            world: None,
+            schedule: None,
+            runner: None,
+        }
+    }
+
     pub fn default_runner() -> Box<dyn FnOnce(App) -> !> {
         Box::new(|mut app| {
-            let exit = panic::catch_unwind(AssertUnwindSafe(|| app.schedule
-                .as_mut().unwrap()
-                .run(app.world.as_mut().unwrap())
-            ));
+            let (world, schedule) = app.unzip_mut();
+            let crashed = panic::catch_unwind(AssertUnwindSafe(|| schedule.run(world))).is_err();
 
             drop(app);
-            process::exit(if exit.is_ok() {
-                0
-            } else {
+            process::exit(if crashed {
                 1
+            } else {
+                0
             });
         })
     }
 
-    pub fn set_runner(&mut self, runner: impl FnOnce(&mut App) -> () + 'static) {
-        let mut runner = Some(runner);
-        self.runner = Some(Box::new(move |mut app| {
-            let runner = runner.take().unwrap();
-            let exit = panic::catch_unwind(AssertUnwindSafe(|| runner(&mut app)));
+    pub fn headless_runner() -> Box<dyn FnOnce(App) -> !> {
+        Box::new(|mut app| {
+            let (world, schedule) = app.unzip_mut();
+            let crashed = panic::catch_unwind(AssertUnwindSafe(|| loop {
+                schedule.run(world)
+            })).is_err();
 
             drop(app);
-            process::exit(if exit.is_ok() {
-                0
-            } else {
+            process::exit(if crashed {
                 1
+            } else {
+                0
             });
-        }));
+        })
     }
 
     #[inline]
-    pub fn set_runner_entire(&mut self, runner: impl FnOnce(App) -> ! + 'static) {
-        self.runner = Some(Box::new(runner))
+    pub fn set_runner(&mut self, runner: impl FnOnce(App) -> ! + 'static) -> &mut Self {
+        self.runner = Some(Box::new(runner));
+        self
+    }
+
+    #[inline]
+    pub fn unzip(&self) -> (&World, &Schedule) {
+        (self.world.as_ref().unwrap(), self.schedule.as_ref().unwrap())
+    }
+
+    #[inline]
+    pub fn unzip_mut(&mut self) -> (&mut World, &mut Schedule) {
+        (self.world.as_mut().unwrap(), self.schedule.as_mut().unwrap())
     }
 
     #[inline]
     pub fn run(&mut self) -> ! {
-        let mut app = mem::replace(self, Self {
-            world: None,
-            schedule: None,
-            runner: None,
-        });
+        let mut app = mem::replace(self, Self::empty());
 
         let runner = app.runner.take().unwrap();
         runner(app);
@@ -150,12 +165,34 @@ impl App {
 
     #[inline]
     pub fn res_ns_or<T: 'static>(&mut self, prov: impl FnOnce() -> T) -> Mut<'_, T> {
-        let world = self.world_mut();
-        if !world.contains_resource::<T>() {
-            world.insert_non_send_resource(prov());
+        if !self.has_res::<T>() {
+            self.insert_res_ns(prov());
         }
 
-        world.non_send_resource_mut::<T>()
+        self.res_ns_mut::<T>().unwrap()
+    }
+
+    #[inline]
+    pub fn has_res<T: 'static>(&self) -> bool {
+        self.world().contains_resource::<T>()
+    }
+
+    #[inline]
+    pub fn stage(&mut self, label: impl StageLabel, stage: impl Stage) -> &mut Self {
+        self.schedule_mut().add_stage(label, stage);
+        self
+    }
+
+    #[inline]
+    pub fn stage_after(&mut self, after: impl StageLabel, label: impl StageLabel, stage: impl Stage) -> &mut Self {
+        self.schedule_mut().add_stage_after(after, label, stage);
+        self
+    }
+
+    #[inline]
+    pub fn sys<Params>(&mut self, label: impl StageLabel, system: impl IntoSystemDescriptor<Params>) -> &mut Self {
+        self.schedule_mut().add_system_to_stage(label, system);
+        self
     }
 }
 

@@ -8,9 +8,10 @@ readme = "README.md"
 repository = "https://github.com/AvantTeam/avocado"
 
 [features]
-asset = []
-winit = ["dep:winit", "dep:wgpu"]
 log = ["dep:env_logger"]
+core = []
+asset = ["core"]
+winit = ["core", "dep:winit", "dep:wgpu"]
 
 [dependencies]
 env_logger = { version = "0.9", optional = true }

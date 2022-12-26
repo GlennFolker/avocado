@@ -24,7 +24,7 @@ impl LogConfig {
         if cfg!(debug_assertions) {
             log::LevelFilter::Trace
         } else {
-            log::LevelFilter::Error
+            log::LevelFilter::Warn
         }
     }
 }
@@ -44,7 +44,7 @@ impl Default for LogConfig {
             filter_modules: {
                 let mut map = HashMap::default();
                 #[cfg(feature = "winit")]
-                map.insert("winit", log::LevelFilter::Error);
+                map.insert("winit", log::LevelFilter::Warn);
 
                 map
             },

@@ -12,19 +12,40 @@ use incl::*;
 pub mod incl {
     pub use super::{
         app::*,
+        sys::*,
+
+        AVocado,
     };
 
     #[cfg(feature = "asset")]
     pub use crate::asset::*;
-
     #[cfg(feature = "core")]
     pub use crate::core::*;
-
+    #[cfg(feature = "graphics")]
+    pub use crate::graphics::*;
     #[cfg(feature = "log")]
     pub use crate::log::*;
-
     #[cfg(feature = "winit")]
     pub use crate::winit::*;
+
+    #[cfg(feature = "winit")]
+    pub mod winit {
+        pub use winit::{
+            dpi::*,
+            error::*,
+            event::*,
+            event_loop::*,
+            monitor::*,
+            window::*,
+        };
+    }
+
+    #[cfg(feature = "winit")]
+    pub mod wgpu {
+        pub use wgpu::{
+            *,
+        };
+    }
 
     pub use bevy_ecs::{
         self, prelude::*,
@@ -89,6 +110,11 @@ pub mod incl {
         Downcast, DowncastSync,
     };
 
+    pub use futures_lite::{
+        self,
+        future,
+    };
+
     pub use log;
     pub use parking_lot::{
         self,
@@ -114,6 +140,7 @@ pub mod incl {
             self,
             Read, Write, Seek,
         },
+        iter,
         marker::PhantomData,
         mem,
         panic::{
@@ -132,12 +159,15 @@ pub mod incl {
 pub mod asset;
 #[cfg(feature = "core")]
 pub mod core;
+#[cfg(feature = "graphics")]
+pub mod graphics;
 #[cfg(feature = "winit")]
 pub mod winit;
 #[cfg(feature = "log")]
 pub mod log;
 
 mod app;
+mod sys;
 
 pub struct AVocado;
 impl Subsystem for AVocado {
@@ -150,5 +180,8 @@ impl Subsystem for AVocado {
 
         #[cfg(feature = "asset")]
         app.init::<AssetSubsystem>();
+
+        #[cfg(feature = "winit")]
+        app.init::<WinitSubsystem>();
     }
 }

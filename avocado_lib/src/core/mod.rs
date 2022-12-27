@@ -1,11 +1,13 @@
 use crate::incl::*;
 
 mod config;
+mod event;
 mod ext;
 mod sys;
 mod time;
 
 pub use config::*;
+pub use event::*;
 pub use ext::AppExt as _;
 pub use sys::*;
 pub use time::*;
@@ -36,12 +38,8 @@ impl Subsystem for CoreSubsystem {
         IoTaskPool::init(|| create(&config.io_pool));
 
         app
-            .init_res::<Time>()
-
             .stage(CoreStage::SysUpdate, SystemStage::parallel()
-                .with_system(Time::update_sys
-                    .label(CoreLabel::TimeUpdate)
-                )
+                .with_system(Time::update_sys.label(CoreLabel::TimeUpdate))
             )
 
             .stage(StartupStage, SystemStage::parallel()
@@ -53,6 +51,9 @@ impl Subsystem for CoreSubsystem {
             .stage(CoreStage::PostUpdate, SystemStage::parallel())
             .stage(CoreStage::SysPostUpdate, SystemStage::parallel()
                 .with_system(bevy_tasks::tick_global_task_pools_on_main_thread.at_end())
-            );
+            )
+
+            .init_res::<Time>()
+            .event::<ExitEvent>();
     }
 }

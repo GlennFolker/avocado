@@ -41,9 +41,19 @@ cargo-emit = "0.2"
 [[example]]
 name = "hello_world"
 path = "examples/hello_world.rs"
-required-features = ["log", "core"]
+required-features = ["log"]
 
 [[example]]
 name = "asset_basic"
-path = "examples/asset/basic.rs"
+path = "examples/asset/asset_basic.rs"
 required-features = ["log", "core", "asset", "asset_folder"]
+
+[[example]]
+name = "fixed_timestep"
+path = "examples/core/fixed_timestep.rs"
+required-features = ["log", "core"]
+
+[[example]]
+name = "hello_graphics"
+path = "examples/winit/hello_graphics.rs"
+required-features = ["log", "core", "winit"]

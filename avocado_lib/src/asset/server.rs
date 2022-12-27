@@ -4,7 +4,7 @@ use crate::incl::*;
 pub struct AssetServer {
     reader: Arc<dyn AssetReader>,
 
-    ref_channels: HashMap<Uuid, Arc<dyn RefPipe>>,
+    ref_channels: HashMap<Uuid, Box<dyn RefPipe>>,
     asset_channels: HashMap<Uuid, Arc<dyn AssetPipe>>,
 
     states: HashMap<Uuid, Arc<RwLock<HashMap<Cow<'static, Path>, AssetState>>>>,
@@ -37,7 +37,7 @@ impl AssetServer {
         let ref_channel = RefChannel::<T>::default();
         let ref_change = ref_channel.sender.clone();
 
-        if self.ref_channels.insert(T::TYPE_UUID, Arc::new(ref_channel)).is_some() {
+        if self.ref_channels.insert(T::TYPE_UUID, Box::new(ref_channel)).is_some() {
             panic!("Asset {} is already registered", type_name::<T>());
         }
 

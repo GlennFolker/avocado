@@ -38,22 +38,6 @@ impl App {
         })
     }
 
-    pub fn headless_runner() -> Box<dyn FnOnce(App) -> !> {
-        Box::new(|mut app| {
-            let (world, schedule) = app.unzip_mut();
-            let crashed = panic::catch_unwind(AssertUnwindSafe(|| loop {
-                schedule.run(world)
-            })).is_err();
-
-            drop(app);
-            process::exit(if crashed {
-                1
-            } else {
-                0
-            });
-        })
-    }
-
     #[inline]
     pub fn set_runner(&mut self, runner: impl FnOnce(App) -> ! + 'static) -> &mut Self {
         self.runner = Some(Box::new(runner));

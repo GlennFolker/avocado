@@ -1,7 +1,9 @@
 use crate::incl::*;
 
 pub trait AssetReader: 'static + Send + Sync {
-    fn read_file(&self, handle_path: &Path) -> Result<Vec<u8>, io::Error>;
+    fn read_file(&self, path: &Path) -> Result<Vec<u8>, io::Error>;
+
+    fn read_relative(&self, path: &Path, rel: &Path) -> Result<Vec<u8>, io::Error>;
 }
 
 #[cfg(feature = "asset_folder")]
@@ -45,15 +47,21 @@ mod folder {
     }
 
     impl AssetReader for AssetFolderReader {
-        fn read_file(&self, handle_path: &Path) -> Result<Vec<u8>, io::Error> {
-            let mut path = PathBuf::new();
-            path.push(&self.asset_folder);
-            path.push(handle_path);
+        fn read_file(&self, path: &Path) -> Result<Vec<u8>, io::Error> {
+            self.read_relative(path, path)
+        }
 
-            let mut file = File::open(&path)?;
-            let mut bytes = vec![];
+        fn read_relative(&self, path: &Path, rel: &Path) -> Result<Vec<u8>, io::Error> {
+            let buf = self.asset_folder
+                .join(path.parent().unwrap_or(Path::new("")))
+                .join(rel);
 
+            let mut file = File::open(&buf)?;
+            let metadata = file.metadata()?;
+
+            let mut bytes = Vec::with_capacity(metadata.len() as usize);
             file.read_to_end(&mut bytes)?;
+
             Ok(bytes)
         }
     }

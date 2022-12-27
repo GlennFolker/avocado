@@ -97,5 +97,6 @@ pub trait AssetData: 'static + Downcast + Debug + Send + Sync {}
 impl_downcast!(AssetData);
 
 #[derive(Debug)]
+/// Must only be used with [`std::option::Option::None`].
 pub struct NoAssetData;
 impl AssetData for NoAssetData {}

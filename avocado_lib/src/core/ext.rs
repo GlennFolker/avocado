@@ -7,6 +7,8 @@ pub trait AppExt {
         &mut self,
         after: impl StageLabel, label: impl StageLabel, stage: impl Stage
     ) -> &mut Self;
+
+    fn startup_sys<Params>(&mut self, system: impl IntoSystemDescriptor<Params>) -> &mut Self;
 }
 
 impl AppExt for App {
@@ -37,6 +39,12 @@ impl AppExt for App {
                 );
         }
 
+        self
+    }
+
+    #[inline]
+    fn startup_sys<Params>(&mut self, system: impl IntoSystemDescriptor<Params>) -> &mut Self {
+        self.schedule_mut().add_system_to_stage(StartupStage, system);
         self
     }
 }

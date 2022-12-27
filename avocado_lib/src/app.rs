@@ -190,6 +190,12 @@ impl App {
     }
 
     #[inline]
+    pub fn stage_before(&mut self, before: impl StageLabel, label: impl StageLabel, stage: impl Stage) -> &mut Self {
+        self.schedule_mut().add_stage_before(before, label, stage);
+        self
+    }
+
+    #[inline]
     pub fn sys<Params>(&mut self, label: impl StageLabel, system: impl IntoSystemDescriptor<Params>) -> &mut Self {
         self.schedule_mut().add_system_to_stage(label, system);
         self

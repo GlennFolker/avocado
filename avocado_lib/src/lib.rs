@@ -4,6 +4,7 @@
 #![feature(div_duration)]
 #![feature(fn_traits)]
 #![feature(inline_const)]
+#![feature(let_chains)]
 #![feature(never_type)]
 
 use incl::*;
@@ -50,6 +51,11 @@ pub mod incl {
         TypeUuid, TypeUuidDynamic as TypeUuidDyn,
     };
 
+    pub use bevy_tasks::{
+        self, prelude::*,
+        TaskPool, TaskPoolBuilder,
+    };
+
     pub use bevy_utils::{
         self, prelude::*,
         Entry, HashMap, HashSet,
@@ -61,9 +67,20 @@ pub mod incl {
         self, prelude::*,
     };
 
+    pub use anyhow::{
+        self,
+        Context as _,
+    };
+
+    pub use cfg_if::cfg_if;
     pub use crossbeam_channel::{
         self,
         Sender, Receiver, TryRecvError,
+    };
+
+    pub use derive_more::{
+        self,
+        *,
     };
 
     pub use downcast_rs::{
@@ -78,6 +95,8 @@ pub mod incl {
         RwLock,
     };
 
+    pub use thiserror::Error;
+
     pub use std::{
         any::{
             type_name,
@@ -85,8 +104,16 @@ pub mod incl {
         },
         borrow::Cow,
         collections::VecDeque,
+        env,
         fmt::Debug,
-        io,
+        fs::{
+            self,
+            File
+        },
+        io::{
+            self,
+            Read, Write, Seek,
+        },
         marker::PhantomData,
         mem,
         panic::{

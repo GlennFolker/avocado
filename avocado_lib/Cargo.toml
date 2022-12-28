@@ -10,14 +10,16 @@ repository = "https://github.com/AvantTeam/avocado"
 [features]
 log = ["dep:env_logger"]
 core = []
-graphics = []
+graphics = ["dep:image"]
 asset = ["core"]
 asset_folder = ["asset"]
 asset_embedded = ["asset"]
-winit = ["core", "graphics", "dep:winit", "dep:wgpu"]
+winit = ["core", "asset", "graphics", "dep:winit", "dep:wgpu"]
+winit_2d = ["winit"]
 
 [dependencies]
 env_logger = { version = "0.9", optional = true }
+image = { version = "0.24", default-features = false, features = ["png"], optional = true }
 winit = { version = "0.27", optional = true }
 wgpu = { version = "0.14", optional = true }
 

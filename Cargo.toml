@@ -19,7 +19,7 @@ default = [
     "log",
     "core",
     "asset", "asset_folder",
-    "winit",
+    "winit", "winit_2d",
 ]
 
 dynamic = ["dep:avocado_dyn"]
@@ -30,6 +30,7 @@ asset = ["avocado_lib/asset"]
 asset_folder = ["avocado_lib/asset_folder"]
 asset_embedded = ["avocado_lib/asset_embedded"]
 winit = ["avocado_lib/winit"]
+winit_2d = ["avocado_lib/winit_2d"]
 
 [dependencies]
 avocado_dyn = { path = "avocado_dyn", version = "0.1.0", optional = true }

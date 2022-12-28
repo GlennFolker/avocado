@@ -1,6 +1,3 @@
-#[allow(unused_imports)]
-use crate::incl::*;
-
 #[derive(Default, Copy, Clone, Debug)]
 pub struct Color {
     pub r: f32,
@@ -42,17 +39,5 @@ impl Color {
             (self.b * 255.) as u8,
             (self.a * 255.) as u8
         ]
-    }
-}
-
-#[cfg(feature = "winit")]
-impl Into<wgpu::Color> for Color {
-    fn into(self) -> wgpu::Color {
-        wgpu::Color {
-            r: self.r as f64,
-            g: self.g as f64,
-            b: self.b as f64,
-            a: self.a as f64,
-        }
     }
 }

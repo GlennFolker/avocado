@@ -10,6 +10,8 @@ pub struct AssetServer {
     states: HashMap<Uuid, Arc<RwLock<HashMap<Cow<'static, Path>, AssetState>>>>,
     loaders: HashMap<Uuid, Arc<dyn AssetLoader>>,
     changed: HashSet<Cow<'static, Path>>,
+
+    load_syncs: Arc<RwLock<VecDeque<(Sender<()>, AssetLoadSyncCallback)>>>,
 }
 
 impl AssetServer {
@@ -18,6 +20,10 @@ impl AssetServer {
         mut events: EventWriter<AssetEvent<T>>, mut assets: ResMut<Assets<T>>
     ) {
         server.update(&mut events, &mut assets);
+    }
+
+    pub fn post_update_sys(world: &mut World) {
+        world.resource_scope(|world, mut server: Mut<AssetServer>| server.post_update(world));
     }
 
     pub fn new(reader: Arc<dyn AssetReader>) -> Self {
@@ -30,6 +36,8 @@ impl AssetServer {
             states: HashMap::default(),
             loaders: HashMap::default(),
             changed: HashSet::default(),
+
+            load_syncs: Arc::default(),
         }
     }
 
@@ -91,11 +99,22 @@ impl AssetServer {
                 None => None,
             };
 
+            let load_syncs = Arc::clone(&self.load_syncs);
             IoTaskPool::get()
                 .spawn(async move {
                     match loader.load(
                         reader, async_path.clone(),
                         data,
+                        Box::new(move |callback| {
+                            let (signal, shutdown) = crossbeam_channel::unbounded();
+                            {
+                                let mut load_syncs = load_syncs.write();
+                                load_syncs.push_back((signal, callback));
+                            }
+
+                            shutdown.recv()?;
+                            Ok(())
+                        })
                     ) {
                         Ok(asset) => {
                             let sender = &pipe.downcast_ref::<AssetChannel<T>>().unwrap().sender;
@@ -167,6 +186,23 @@ impl AssetServer {
                     TryRecvError::Empty => break,
                     TryRecvError::Disconnected => panic!("Asset channel {} disconnected", type_name::<T>()),
                 },
+            }
+        }
+    }
+
+    pub fn post_update(&mut self, world: &mut World) {
+        loop {
+            let (signal, callback) = {
+                let mut load_syncs = self.load_syncs.write();
+                match load_syncs.pop_front() {
+                    Some((signal, callback)) => (signal, callback),
+                    None => break,
+                }
+            };
+
+            callback(world);
+            if let Err(msg) = signal.send(()) {
+                log::warn!("Couldn't send continue signal: {}", msg);
             }
         }
     }

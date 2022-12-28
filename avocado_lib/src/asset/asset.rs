@@ -37,18 +37,18 @@ pub enum AssetState {
 
 #[derive(Resource)]
 pub struct Assets<T: Asset> {
-    assets: HashMap<Cow<'static, Path>, T>,
+    assets: HashMap<Cow<'static, Path>, Arc<T>>,
     counts: HashMap<Cow<'static, Path>, isize>,
     ref_change: Sender<RefChange<T>>,
 }
 
 impl<T: Asset> Assets<T> {
-    pub fn get(&self, handle: &Handle<T>) -> Option<&T> {
-        self.assets.get(&handle.handle_path)
+    pub fn get(&self, handle: &Handle<T>) -> Option<Arc<T>> {
+        self.assets.get(&handle.handle_path).cloned()
     }
 
     pub fn add(&mut self, handle_path: Cow<'static, Path>, asset: T) -> Handle<T> {
-        self.assets.insert(handle_path.clone(), asset);
+        self.assets.insert(handle_path.clone(), Arc::new(asset));
         Handle::strong(handle_path, self.ref_change.clone())
     }
 
@@ -61,7 +61,7 @@ impl<T: Asset> Assets<T> {
     }
 
     pub(crate) fn add_direct(&mut self, events: &mut EventWriter<AssetEvent<T>>, handle_path: Cow<'static, Path>, asset: T) {
-        self.assets.insert(handle_path.clone(), asset);
+        self.assets.insert(handle_path.clone(), Arc::new(asset));
         events.send(AssetEvent::Created(Handle::weak(handle_path)));
     }
 
@@ -84,19 +84,3 @@ pub enum AssetEvent<T: Asset> {
     Created(Handle<T>),
     Removed(Handle<T>),
 }
-
-pub trait AssetLoader: 'static + Send + Sync {
-    fn load(
-        &self,
-        reader: Arc<dyn AssetReader>, handle_path: Cow<'static, Path>,
-        data: Option<Box<dyn AssetData>>,
-    ) -> Result<Box<dyn AssetDyn>, anyhow::Error>;
-}
-
-pub trait AssetData: 'static + Downcast + Debug + Send + Sync {}
-impl_downcast!(AssetData);
-
-#[derive(Debug)]
-/// Must only be used with [`std::option::Option::None`].
-pub struct NoAssetData;
-impl AssetData for NoAssetData {}

@@ -1,7 +1,15 @@
 use crate::incl::*;
 
+#[cfg(feature = "winit_2d")]
+mod g2d;
+#[cfg(feature = "winit_2d")]
+pub use g2d::*;
+
+pub mod render;
+
 mod config;
 mod event;
+mod ext;
 mod frame;
 mod res;
 mod runner;
@@ -9,6 +17,7 @@ mod sys;
 
 pub use config::*;
 pub use event::*;
+pub use ext::{};
 pub use frame::*;
 pub use res::*;
 pub use runner::*;
@@ -44,6 +53,12 @@ impl Subsystem for WinitSubsystem {
             .event::<WindowResizedEvent>()
             .event::<WindowMovedEvent>()
             .event::<SuspendEvent>()
-            .event::<ResumeEvent>();
+            .event::<ResumeEvent>()
+
+            .asset::<Texture>()
+            .asset_loader::<Texture>(TextureLoader);
+
+        #[cfg(feature = "winit_2d")]
+        app.init::<Winit2dSubsystem>();
     }
 }

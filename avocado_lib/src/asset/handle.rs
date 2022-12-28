@@ -1,8 +1,15 @@
 use crate::incl::*;
 
+#[derive(Debug)]
 pub struct Handle<T: Asset> {
     pub(crate) handle_path: Cow<'static, Path>,
     pub(crate) handle_type: HandleType<T>,
+}
+
+impl<T: Asset> Hash for Handle<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.handle_path.hash(state);
+    }
 }
 
 impl<T: Asset> Handle<T> {
@@ -63,11 +70,13 @@ impl<T: Asset> Drop for Handle<T> {
     }
 }
 
+#[derive(Debug)]
 pub(crate) enum HandleType<T: Asset> {
     Weak,
     Strong(Sender<RefChange<T>>),
 }
 
+#[derive(Debug)]
 pub(crate) enum RefChange<T: Asset> {
     Incr(Handle<T>),
     Decr(Handle<T>),

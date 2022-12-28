@@ -12,6 +12,7 @@ use incl::*;
 pub mod incl {
     pub use super::{
         app::*,
+        bin_pack::*,
         sys::*,
 
         AVocado,
@@ -25,8 +26,18 @@ pub mod incl {
     pub use crate::graphics::*;
     #[cfg(feature = "log")]
     pub use crate::log::*;
+
     #[cfg(feature = "winit")]
-    pub use crate::winit::*;
+    pub use crate::winit::{
+        *,
+        render::*,
+    };
+
+    #[cfg(feature = "graphics")]
+    pub use image::{
+        self,
+        GenericImageView as _,
+    };
 
     #[cfg(feature = "winit")]
     pub mod winit {
@@ -59,6 +70,7 @@ pub mod incl {
             StageLabel, SystemLabel,
         },
         system::{
+            SystemState,
             Command,
             EntityCommands,
         },
@@ -136,6 +148,10 @@ pub mod incl {
             self,
             File
         },
+        hash::{
+            self,
+            Hash, Hasher,
+        },
         io::{
             self,
             Read, Write, Seek,
@@ -143,6 +159,7 @@ pub mod incl {
         iter,
         marker::PhantomData,
         mem,
+        num::NonZeroU32,
         panic::{
             self,
             AssertUnwindSafe,
@@ -167,6 +184,7 @@ pub mod winit;
 pub mod log;
 
 mod app;
+mod bin_pack;
 mod sys;
 
 pub struct AVocado;
@@ -180,6 +198,9 @@ impl Subsystem for AVocado {
 
         #[cfg(feature = "asset")]
         app.init::<AssetSubsystem>();
+
+        #[cfg(feature = "graphics")]
+        app.init::<GraphicsSubsystem>();
 
         #[cfg(feature = "winit")]
         app.init::<WinitSubsystem>();

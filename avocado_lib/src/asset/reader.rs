@@ -1,8 +1,10 @@
 use crate::incl::*;
 
 pub trait AssetReader: 'static + Send + Sync {
-    fn read_file(&self, path: &Path) -> Result<Vec<u8>, io::Error>;
+    fn exists(&self, path: &Path) -> bool;
+    fn is_dir(&self, path: &Path) -> bool;
 
+    fn read_file(&self, path: &Path) -> Result<Vec<u8>, io::Error>;
     fn read_relative(&self, path: &Path, rel: &Path) -> Result<Vec<u8>, io::Error>;
 }
 
@@ -47,6 +49,14 @@ mod folder {
     }
 
     impl AssetReader for AssetFolderReader {
+        fn exists(&self, path: &Path) -> bool {
+            self.asset_folder.join(path).exists()
+        }
+
+        fn is_dir(&self, path: &Path) -> bool {
+            self.asset_folder.join(path).is_dir()
+        }
+
         fn read_file(&self, path: &Path) -> Result<Vec<u8>, io::Error> {
             self.read_relative(path, path)
         }

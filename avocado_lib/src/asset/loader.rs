@@ -17,6 +17,8 @@ pub trait AssetLoader: 'static + Send + Sync {
 pub enum AssetLoaderError {
     #[error("Asset data is required")]
     NoData,
+    #[error("Asset handle exists, but the asset is unloaded")]
+    NoAsset,
     #[error("Asset data is in the wrong type")]
     WrongType,
     #[error("{0}")]

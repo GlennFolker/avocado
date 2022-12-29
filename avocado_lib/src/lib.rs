@@ -68,9 +68,10 @@ pub mod incl {
         schedule::{
             ShouldRun,
             StageLabel, SystemLabel,
+            SystemLabelId,
         },
         system::{
-            SystemState,
+            SystemState, BoxedSystem,
             Command,
             EntityCommands,
         },
@@ -143,7 +144,10 @@ pub mod incl {
         borrow::Cow,
         collections::VecDeque,
         env,
-        fmt::Debug,
+        fmt::{
+            self,
+            Debug, Display,
+        },
         fs::{
             self,
             File
@@ -168,6 +172,7 @@ pub mod incl {
             Path, PathBuf,
         },
         process,
+        rc::Rc,
         sync::Arc,
     };
 }

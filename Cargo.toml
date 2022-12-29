@@ -50,6 +50,11 @@ path = "examples/asset/asset_basic.rs"
 required-features = ["log", "core", "asset", "asset_folder"]
 
 [[example]]
+name = "asset_graph"
+path = "examples/asset/asset_graph.rs"
+required-features = ["log", "core", "asset", "asset_folder"]
+
+[[example]]
 name = "fixed_timestep"
 path = "examples/core/fixed_timestep.rs"
 required-features = ["log", "core"]

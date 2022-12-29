@@ -28,6 +28,7 @@ pub(crate) enum AssetLife<T: Asset> {
     Removed(Cow<'static, Path>),
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum AssetState {
     Unloaded,
     Loading,
@@ -39,7 +40,7 @@ pub enum AssetState {
 pub struct Assets<T: Asset> {
     assets: HashMap<Cow<'static, Path>, Arc<T>>,
     counts: HashMap<Cow<'static, Path>, isize>,
-    ref_change: Sender<RefChange<T>>,
+    ref_change: Sender<RefChange>,
 }
 
 impl<T: Asset> Assets<T> {
@@ -52,7 +53,7 @@ impl<T: Asset> Assets<T> {
         Handle::strong(handle_path, self.ref_change.clone())
     }
 
-    pub(crate) fn new(ref_change: Sender<RefChange<T>>) -> Self {
+    pub(crate) fn new(ref_change: Sender<RefChange>) -> Self {
         Self {
             assets: HashMap::default(),
             counts: HashMap::default(),
@@ -78,9 +79,4 @@ impl<T: Asset> Assets<T> {
     pub(crate) fn incr_count(&mut self, handle_path: Cow<'static, Path>, incr: isize) {
         *self.counts.entry(handle_path).or_insert(0) += incr;
     }
-}
-
-pub enum AssetEvent<T: Asset> {
-    Created(Handle<T>),
-    Removed(Handle<T>),
 }

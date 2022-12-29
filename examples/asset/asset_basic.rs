@@ -12,6 +12,7 @@ impl AssetLoader for SecretAssetLoader {
         &self,
         reader: Arc<dyn AssetReader>, handle_path: Cow<'static, Path>,
         _: Option<Box<dyn AssetData>>,
+        _: AssetLoadSync,
     ) -> Result<Box<dyn AssetDyn>, anyhow::Error> {
         let data = reader.read_file(&handle_path)?;
         let message = String::from_utf8(data)?;
@@ -45,9 +46,9 @@ fn startup(mut commands: Commands, mut server: ResMut<AssetServer>) {
     commands.insert_resource(Secret(handle));
 }
 
-fn check(assets: Res<Assets<SecretAsset>>, secret: Res<Secret>, mut ran: Local<bool>) {
-    if !*ran && let Some(asset) = assets.get(&secret) {
-        *ran = true;
+fn check(assets: Res<Assets<SecretAsset>>, secret: Res<Secret>, mut exit: EventWriter<ExitEvent>) {
+    if let Some(asset) = assets.get(&secret) {
         log::info!("{}", &**asset);
+        exit.send(ExitEvent::graceful());
     }
 }

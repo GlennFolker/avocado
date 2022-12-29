@@ -66,22 +66,6 @@ impl WinitRunner {
             let (world, schedule) = app.unzip_mut();
             let window = &*world.non_send_resource::<WinitWindow>();
 
-            let exit_code = {
-                let exit = exit.read();
-                match &*exit {
-                    Some(ExitReason::Graceful) => Some(0),
-                    Some(ExitReason::Error(msg)) => {
-                        log::error!("App crashed: {}", msg);
-                        Some(1)
-                    },
-                    None => None,
-                }
-            };
-
-            if let Some(exit_code) = exit_code {
-                *control_flow = winit::ControlFlow::ExitWithCode(exit_code);
-            }
-
             match event {
                 winit::Event::NewEvents(cause) => {
                     if cause == winit::StartCause::Init {
@@ -94,10 +78,7 @@ impl WinitRunner {
                             winit::WindowEvent::Resized(size) => world.send_event(WindowResizedEvent(size)),
                             winit::WindowEvent::Moved(pos) => world.send_event(WindowMovedEvent(pos)),
                             winit::WindowEvent::CloseRequested => {
-                                if exit_code.is_none() {
-                                    world.send_event(ExitEvent::graceful());
-                                }
-
+                                world.send_event(ExitEvent::graceful());
                                 world.send_event(SuspendEvent);
                             },
                             _ => {}
@@ -106,6 +87,23 @@ impl WinitRunner {
                 },
                 winit::Event::MainEventsCleared => {
                     schedule.run(world);
+
+                    let exit = exit.read();
+                    let exit_code = match &*exit {
+                        Some(ExitReason::Graceful) => {
+                            log::info!("App exited gracefully");
+                            Some(0)
+                        },
+                        Some(ExitReason::Error(ref msg)) => {
+                            log::error!("App crashed: {}", msg);
+                            Some(1)
+                        },
+                        None => None,
+                    };
+
+                    if let Some(exit_code) = exit_code {
+                        *control_flow = winit::ControlFlow::ExitWithCode(exit_code);
+                    }
                 },
                 winit::Event::LoopDestroyed => {
                     let app = mem::replace(&mut app, App::empty());

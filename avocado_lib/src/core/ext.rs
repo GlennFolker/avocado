@@ -19,26 +19,24 @@ impl AppExt for App {
     fn headless_runner() -> Box<dyn FnOnce(App) -> !> {
         Box::new(|mut app| {
             let exit = Arc::default();
-            {
-                app.exit_handle(Arc::clone(&exit));
-            }
+            app.exit_handle(Arc::clone(&exit));
 
             let (world, schedule) = app.unzip_mut();
             let result = panic::catch_unwind(AssertUnwindSafe(|| loop {
-                {
-                    let exit = exit.read();
-                    match &*exit {
-                        Some(ExitReason::Graceful) => break,
-                        Some(ExitReason::Error(msg)) => panic!("{}", &msg),
-                        None => {},
-                    }
-                }
-
                 schedule.run(world);
+
+                let exit = exit.read();
+                match &*exit {
+                    Some(ExitReason::Graceful) => break,
+                    Some(ExitReason::Error(msg)) => panic!("{}", &msg),
+                    None => {},
+                }
             }));
 
             if let Err(ref err) = result {
                 log::error!("App crashed: {:?}", err);
+            } else {
+                log::info!("App exited gracefully");
             }
 
             drop(app);
@@ -88,7 +86,7 @@ impl AppExt for App {
 
     #[inline]
     fn exit_handle(&mut self, var: Arc<RwLock<Option<ExitReason>>>) -> &mut Self {
-        self.sys(CoreStage::SysUpdate, move |mut exit_event: EventReader<ExitEvent>| {
+        self.sys(CoreStage::SysPostUpdate, move |mut exit_event: EventReader<ExitEvent>| {
             if !exit_event.is_empty() {
                 let event = exit_event.iter().next_back().unwrap();
                 *var.write() = Some(event.reason.clone());

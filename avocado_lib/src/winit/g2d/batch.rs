@@ -353,7 +353,7 @@ impl<const MASK: u32> RenderNodeDesc for SpriteBatch<MASK> {
                 let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("Sprite batch render pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &node.output.buffer.color_attachments[0].1,
+                        view: &node.output.buffer.colors[0].view,
                         resolve_target: None,
                         ops: wgpu::Operations {
                             load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),

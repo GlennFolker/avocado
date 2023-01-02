@@ -398,7 +398,7 @@ impl RenderGraph {
                 let output = self.nodes[output].output();
 
                 let state = self.state.as_mut().unwrap();
-                state.update_bind_group(renderer, &output.buffer.color_attachments[0].1);
+                state.update_bind_group(renderer, &output.buffer.colors[0].view);
 
                 pass.set_pipeline(&state.pipeline);
                 pass.set_bind_group(0, state.bind_group.as_ref().unwrap(), &[]);

@@ -14,4 +14,7 @@ pub struct Renderer {
 }
 
 #[derive(Deref, DerefMut)]
+pub struct EventLoop(pub winit::EventLoop<()>);
+
+#[derive(Deref, DerefMut)]
 pub struct WinitWindow(pub winit::Window);

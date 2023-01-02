@@ -38,21 +38,33 @@ pub enum AssetState {
 
 #[derive(Resource)]
 pub struct Assets<T: Asset> {
-    assets: HashMap<Cow<'static, Path>, Arc<T>>,
+    assets: HashMap<Cow<'static, Path>, T>,
     counts: HashMap<Cow<'static, Path>, isize>,
     ref_change: Sender<RefChange>,
 }
 
 impl<T: Asset> Assets<T> {
-    pub fn get(&self, handle: &Handle<T>) -> Option<Arc<T>> {
-        self.assets.get(&handle.handle_path).cloned()
+    #[inline]
+    pub fn get(&self, handle: &Handle<T>) -> Option<&T> {
+        self.assets.get(&handle.handle_path)
     }
 
+    #[inline]
     pub fn add(&mut self, handle_path: Cow<'static, Path>, asset: T) -> Handle<T> {
-        self.assets.insert(handle_path.clone(), Arc::new(asset));
+        self.assets.insert(handle_path.clone(), asset);
         Handle::strong(handle_path, self.ref_change.clone())
     }
 
+    #[inline]
+    pub fn remove(&mut self, handle: Handle<T>) -> Result<T, Handle<T>> {
+        if self.count(&handle.handle_path) > 1 || !self.assets.contains_key(&handle.handle_path) {
+            Err(handle)
+        } else {
+            Ok(self.assets.remove(&handle.handle_path).unwrap())
+        }
+    }
+
+    #[inline]
     pub(crate) fn new(ref_change: Sender<RefChange>) -> Self {
         Self {
             assets: HashMap::default(),
@@ -61,21 +73,22 @@ impl<T: Asset> Assets<T> {
         }
     }
 
-    pub(crate) fn add_direct(&mut self, events: &mut EventWriter<AssetEvent<T>>, handle_path: Cow<'static, Path>, asset: T) {
-        self.assets.insert(handle_path.clone(), Arc::new(asset));
-        events.send(AssetEvent::Created(Handle::weak(handle_path)));
+    #[inline]
+    pub(crate) fn add_direct(&mut self, handle_path: Cow<'static, Path>, asset: T) {
+        self.assets.insert(handle_path.clone(), asset);
     }
 
-    pub(crate) fn remove_direct(&mut self, events: &mut EventWriter<AssetEvent<T>>, handle_path: Cow<'static, Path>) {
-        if self.assets.remove(&handle_path).is_some() {
-            events.send(AssetEvent::Removed(Handle::weak(handle_path)));
-        }
+    #[inline]
+    pub(crate) fn remove_direct(&mut self, handle_path: Cow<'static, Path>) {
+        self.assets.remove(&handle_path);
     }
 
+    #[inline]
     pub(crate) fn count(&self, handle_path: &Path) -> isize {
         *self.counts.get(handle_path).unwrap_or(&0)
     }
 
+    #[inline]
     pub(crate) fn incr_count(&mut self, handle_path: Cow<'static, Path>, incr: isize) {
         *self.counts.entry(handle_path).or_insert(0) += incr;
     }

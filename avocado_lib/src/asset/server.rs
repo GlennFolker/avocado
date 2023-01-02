@@ -15,11 +15,8 @@ pub struct AssetServer {
 }
 
 impl AssetServer {
-    pub fn update_sys<T: Asset>(
-        mut server: ResMut<AssetServer>,
-        mut events: EventWriter<AssetEvent<T>>, mut assets: ResMut<Assets<T>>
-    ) {
-        server.update(&mut events, &mut assets);
+    pub fn update_sys<T: Asset>(mut server: ResMut<AssetServer>, mut assets: ResMut<Assets<T>>) {
+        server.update(&mut assets);
     }
 
     pub fn post_update_sys(world: &mut World) {
@@ -199,7 +196,7 @@ impl AssetServer {
         Handle::strong(path, refs.clone())
     }
 
-    pub fn update<T: Asset>(&mut self, events: &mut EventWriter<AssetEvent<T>>, assets: &mut Assets<T>) {
+    pub fn update<T: Asset>(&mut self, assets: &mut Assets<T>) {
         let refs = &Self::get::<_, T>(&self.ref_channels).receiver;
         let pipe = Self::get::<_, T>(&self.asset_channels).downcast_ref::<AssetChannel<T>>().unwrap();
 
@@ -237,11 +234,11 @@ impl AssetServer {
                 Ok(life) => match life {
                     AssetLife::Created(path, asset) => if assets.count(&path) > 0 {
                         state.insert(path.clone(), AssetState::Loaded);
-                        assets.add_direct(events, path, asset);
+                        assets.add_direct(path, asset);
                     },
                     AssetLife::Removed(path) => {
                         state.remove(&path); // Remove it again, just in case.
-                        assets.remove_direct(events, path);
+                        assets.remove_direct(path);
                     },
                 },
                 Err(err) => match err {

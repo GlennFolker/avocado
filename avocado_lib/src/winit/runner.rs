@@ -2,16 +2,19 @@ use crate::incl::*;
 
 pub struct WinitRunner;
 impl WinitRunner {
-    pub fn run(mut app: App) -> ! {
+    pub fn init(app: &mut App) -> &mut App {
         let event_loop = winit::EventLoop::new();
         let window = match app.res_or(WindowConfig::default).create(&event_loop) {
             Ok(window) => window,
             Err(err) => panic!("Couldn't create window: {:?}", err),
         };
 
-        app.init_res::<ClearColor>();
-        app.insert_res_ns(WinitWindow(window));
-        let window = &app.res_ns::<WinitWindow>().unwrap().0;
+        app
+            .init_res::<ClearColor>()
+            .insert_res_ns(WinitWindow(window))
+            .insert_res_ns(EventLoop(event_loop));
+
+        let window = &**app.res_ns::<WinitWindow>().unwrap();
 
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let surface = unsafe { instance.create_surface(&window) };
@@ -27,8 +30,8 @@ impl WinitRunner {
 
         let (device, queue) = match future::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
-                features: wgpu::Features::empty(),
-                limits: wgpu::Limits::default(),
+                features: adapter.features(),
+                limits: adapter.limits(),
                 label: None,
             },
             None,
@@ -54,14 +57,14 @@ impl WinitRunner {
         surface.configure(&device, &config);
         app
             .insert_res(SurfaceConfig { surface, config, size, })
-            .insert_res(Renderer { device, queue, });
+            .insert_res(Renderer { device, queue, })
+    }
 
-        drop(adapter);
-        drop(instance);
-
+    pub fn run(mut app: App) -> ! {
         let exit = Arc::default();
         app.exit_handle(Arc::clone(&exit));
 
+        let event_loop = app.remove_res_ns::<EventLoop>().unwrap().0;
         event_loop.run(move |event, _, control_flow| {
             let (world, schedule) = app.unzip_mut();
             let window = &*world.non_send_resource::<WinitWindow>();

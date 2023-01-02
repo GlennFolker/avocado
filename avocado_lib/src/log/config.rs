@@ -45,8 +45,10 @@ impl Default for LogConfig {
                 let mut map = HashMap::default();
                 #[cfg(feature = "winit")]
                 {
+                    map.insert("wgpu", log::LevelFilter::Error);
                     map.insert("wgpu_core", log::LevelFilter::Error);
                     map.insert("wgpu_hal", log::LevelFilter::Error);
+                    map.insert("naga", log::LevelFilter::Error);
                 }
 
                 map

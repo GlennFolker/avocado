@@ -1,8 +1,10 @@
 use crate::incl::*;
 
 mod atlas;
+mod batch;
 
 pub use atlas::*;
+pub use batch::*;
 
 pub struct Winit2dSubsystem;
 impl Subsystem for Winit2dSubsystem {

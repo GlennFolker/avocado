@@ -13,4 +13,9 @@ pub enum RenderLabel {
     PrepareFrame,
     InitFrame,
     PresentFrame,
+
+    ComputeGlobalCamera,
+
+    Queue,
+    Render,
 }

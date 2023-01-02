@@ -17,7 +17,10 @@ mod sys;
 
 pub use config::*;
 pub use event::*;
-pub use ext::{};
+pub use ext::{
+    ColorExt as _,
+    AppExt as _,
+};
 pub use frame::*;
 pub use res::*;
 pub use runner::*;
@@ -26,7 +29,7 @@ pub use sys::*;
 pub struct WinitSubsystem;
 impl Subsystem for WinitSubsystem {
     fn init(app: &mut App) {
-        app
+        WinitRunner::init(app)
             .set_runner(WinitRunner::run)
 
             .stage(RenderStage::Begin, SystemStage::parallel()
@@ -35,20 +38,28 @@ impl Subsystem for WinitSubsystem {
                     .label(RenderLabel::InitFrame)
                     .after(RenderLabel::PrepareFrame)
                 )
+                .with_system(GlobalCamera::update_sys
+                    .label(RenderLabel::ComputeGlobalCamera)
+                )
             )
 
             .stage(RenderStage::Queue, SystemStage::parallel())
-            .stage(RenderStage::Render, SystemStage::parallel())
+
+            .stage(RenderStage::Render, SystemStage::parallel()
+                .with_system(RenderGraph::render_sys.at_end())
+            )
 
             .stage(RenderStage::End, SystemStage::parallel()
                 .with_system(Frame::present_sys.label(RenderLabel::PresentFrame))
                 .with_system(WindowConfig::visible_sys
-                    .run_if(run_once)
+                    .with_run_criteria(ShouldRun::once)
                     .after(RenderLabel::PresentFrame)
                 )
             )
 
             .init_res::<Frame>()
+            .init_res::<RenderGraph>()
+            .init_res::<GlobalCamera>()
 
             .event::<WindowResizedEvent>()
             .event::<WindowMovedEvent>()

@@ -2,6 +2,7 @@ use crate::incl::*;
 
 pub type AssetGraphIn = HashMap<&'static str, AssetGraphOut>;
 pub type AssetGraphOut = Vec<HandleDyn>;
+pub type AssetGraphResult = Result<AssetGraphOut, anyhow::Error>;
 
 #[derive(Resource)]
 pub struct AssetGraph {
@@ -137,7 +138,7 @@ impl AssetGraph {
 #[display(fmt = "{:?}", label)]
 pub struct AssetGraphNode {
     label: &'static str,
-    system: BoxedSystem<AssetGraphIn, Result<AssetGraphOut, anyhow::Error>>,
+    system: BoxedSystem<AssetGraphIn, AssetGraphResult>,
     
     parents: Vec<usize>,
     children: Vec<usize>,
@@ -146,7 +147,7 @@ pub struct AssetGraphNode {
 #[derive(Default)]
 pub struct AssetGraphBuilder {
     nodes: Vec<AssetGraphNode>,
-    used_labels: HashSet<&'static str>,
+    labels: HashMap<&'static str, usize>,
 }
 
 impl AssetGraphBuilder {
@@ -154,11 +155,11 @@ impl AssetGraphBuilder {
         AssetGraph::new(self.nodes)
     }
 
-    pub fn node<Params>(
+    pub fn node<Param>(
         &mut self,
-        label: &'static str, sys: impl IntoSystem<AssetGraphIn, Result<AssetGraphOut, anyhow::Error>, Params>
-    ) -> usize {
-        if !self.used_labels.insert(label) {
+        label: &'static str, sys: impl IntoSystem<AssetGraphIn, AssetGraphResult, Param>
+    ) {
+        if self.labels.insert(label, self.nodes.len()).is_some() {
             panic!("Duplicate label: {:?}", label);
         }
 
@@ -169,11 +170,16 @@ impl AssetGraphBuilder {
             parents: vec![],
             children: vec![],
         });
-
-        self.nodes.len() - 1
     }
 
-    pub fn edge(&mut self, parent: usize, child: usize) {
+    pub fn edge(&mut self, parent: &'static str, child: &'static str) {
+        let parent = self.labels[parent];
+        let child = self.labels[child];
+
+        if self.nodes[parent].children.contains(&child) {
+            return;
+        }
+
         let mut queue = VecDeque::<usize>::new();
         let mut iterated = HashSet::default();
         queue.extend(&self.nodes[child].children);

@@ -4,7 +4,16 @@ use crate::incl::*;
 #[uuid = "842a1988-c51e-457b-aea5-f4e0893e79b1"]
 pub struct TextureAtlas {
     pub pages: Vec<Handle<Texture>>,
+    pub samplers: Vec<wgpu::Sampler>,
+
     pub mapping: HashMap<PathBuf, AtlasRegion>,
+    pub sampler_mapping: HashMap<usize, usize>,
+}
+
+impl TextureAtlas {
+    pub fn region(&self, path: &Path) -> AtlasRegion {
+        self.mapping[path]
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -21,6 +30,19 @@ pub struct AtlasRegion {
     pub v2: f32,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct Sprite {
+    pub region: AtlasRegion,
+    pub color: Color,
+    pub trns: SpriteTransform,
+    pub mask: u32,
+}
+
+#[derive(Component, Clone)]
+pub struct SpriteHolder {
+    pub sprites: Vec<Sprite>,
+}
+
 /// Necessary data for texture atlas building. Given image handles must be strong otherwise a panic is expected.
 #[derive(Debug)]
 pub struct TextureAtlasData {
@@ -28,8 +50,7 @@ pub struct TextureAtlasData {
     pub min_height: u32,
     pub max_width: u32,
     pub max_height: u32,
-    pub padding: u32,
-    pub categories: HashMap<String, (SamplerDescriptor, Vec<Handle<Image>>)>,
+    pub categories: HashMap<String, (SamplerDesc, Vec<Handle<Image>>)>,
 }
 
 pub struct TextureAtlasLoader;
@@ -54,7 +75,7 @@ impl AssetLoader for TextureAtlasLoader {
                 for (group, (desc, images)) in categories.drain() {
                     mapped.write().insert(group, (desc, images
                         .iter()
-                        .map(|handle| (handle.path().to_path_buf(), assets.get(&handle).unwrap()))
+                        .map(|handle| (handle.path().to_path_buf(), assets.get(&handle).unwrap().clone()))
                         .collect::<Vec<_>>()
                     ));
                 }
@@ -63,35 +84,33 @@ impl AssetLoader for TextureAtlasLoader {
 
         let mut packer = BinPack::<String, PathBuf>::new(data.min_width, data.min_height, data.max_width, data.max_height);
         let mut mapped = mapped.write();
-        let pad = data.padding;
 
         for (group, (_, images)) in &*mapped {
             packer.group(group.clone());
             for (path, image) in images {
-                packer.insert(&group, path.clone(), image.width + pad * 2, image.height + pad * 2)?;
+                packer.insert(&group, path.clone(), image.width, image.height)?;
             }
         }
 
         let mut pages = vec![];
+        let mut sampler_descs = vec![];
         let mut mapping = HashMap::default();
+        let mut sampler_mapping = HashMap::default();
 
         let mut bins = packer.finish();
         for (group, mut bins) in bins.drain() {
             let (desc, mut images) = mapped.remove(&group).ok_or(AssetLoaderError::Other("Group not found".to_string()))?;
+            sampler_descs.push(desc);
+
             for bin in bins.drain(..) {
                 let page_width = bin.width();
                 let page_height = bin.height();
 
                 let mut page = Image::new(page_width, page_height);
                 for (path, image) in images.drain(..) {
-                    let mut rect = bin
+                    let rect = bin
                         .get(&path)
                         .ok_or(AssetLoaderError::Other(format!("{:?} not found", &path)))?;
-
-                    rect.x += pad;
-                    rect.y += pad;
-                    rect.width -= pad;
-                    rect.height -= pad;
 
                     page.draw(&image, rect.x, rect.y);
                     mapping.insert(path, AtlasRegion {
@@ -108,15 +127,20 @@ impl AssetLoader for TextureAtlasLoader {
                     });
                 }
 
-                pages.push((desc, page));
+                pages.push(page);
+                sampler_mapping.insert(pages.len() - 1, sampler_descs.len() - 1);
             }
         }
 
         let textures = Arc::new(RwLock::new(Vec::with_capacity(pages.len())));
+        let samplers = Arc::new(RwLock::new(Vec::with_capacity(sampler_descs.len())));
+
         {
             let textures = Arc::clone(&textures);
-            let mut pages = pages;
+            let samplers = Arc::clone(&samplers);
 
+            let mut pages = pages;
+            let mut sampler_descs = sampler_descs;
             load_sync(Box::new(move |world| {
                 let (renderer, mut assets) = SystemState::<(
                     Res<Renderer>,
@@ -124,16 +148,21 @@ impl AssetLoader for TextureAtlasLoader {
                 )>::new(world).get_mut(world);
 
                 let mut i = 0;
-                for (desc, page) in pages.drain(..) {
+                for page in pages.drain(..) {
                     let path = handle_path
                         .parent().unwrap_or(Path::new(""))
-                        .join(format!("{:?}#page{}", &handle_path, i));
+                        .join(format!("{}#page{}", handle_path.to_string_lossy(), i));
 
                     i += 1;
 
-                    let tex = Texture::from_image(&renderer, &page, None, desc);
+                    let tex = Texture::from_image(&renderer, &page, None);
                     let handle = assets.add(Cow::Owned(path), tex);
                     textures.write().push(handle);
+                }
+
+                for desc in sampler_descs.drain(..) {
+                    let sampler = desc.create_sampler(&renderer);
+                    samplers.write().push(sampler);
                 }
             }))?;
         }
@@ -146,6 +175,14 @@ impl AssetLoader for TextureAtlasLoader {
             pages
         };
 
-        Ok(Box::new(TextureAtlas { pages, mapping }))
+        let samplers = {
+            let mut samplers = samplers.write();
+
+            let mut inner = Vec::with_capacity(samplers.len());
+            inner.append(&mut samplers);
+            inner
+        };
+
+        Ok(Box::new(TextureAtlas { pages, samplers, mapping, sampler_mapping, }))
     }
 }

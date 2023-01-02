@@ -33,13 +33,13 @@ fn main() {
         .insert_res({
             let mut builder = AssetGraphBuilder::default();
 
-            let first = builder.node("first",
+            builder.node("first",
             |In(_): In<AssetGraphIn>, mut server: ResMut<AssetServer>| {
                 let asset = server.load::<Message>(Path::new("AVocado")).as_dyn();
                 Ok(vec![asset])
             });
 
-            let first_a = builder.node("first_a",
+            builder.node("first_a",
             |In(data): In<AssetGraphIn>, mut server: ResMut<AssetServer>, messages: Res<Assets<Message>>| {
                 let handle = data["first"][0].clone_weak_typed()?;
                 let message = messages.get(&handle).ok_or(AssetLoaderError::NoAsset)?;
@@ -48,7 +48,7 @@ fn main() {
                 Ok(vec![asset])
             });
 
-            let first_b = builder.node("first_b",
+            builder.node("first_b",
             |In(data): In<AssetGraphIn>, mut server: ResMut<AssetServer>, messages: Res<Assets<Message>>| {
                 let handle = data["first"][0].clone_weak_typed()?;
                 let message = messages.get(&handle).ok_or(AssetLoaderError::NoAsset)?;
@@ -57,7 +57,7 @@ fn main() {
                 Ok(vec![asset])
             });
 
-            let second = builder.node("second",
+            builder.node("second",
             |In(data): In<AssetGraphIn>, mut commands: Commands, mut server: ResMut<AssetServer>, messages: Res<Assets<Message>>| {
                 let a = data["first_a"][0].clone_weak_typed()?;
                 let a = messages.get(&a).ok_or(AssetLoaderError::NoAsset)?;
@@ -71,11 +71,11 @@ fn main() {
                 Ok(vec![asset.as_dyn()])
             });
 
-            builder.edge(first, first_a);
-            builder.edge(first, first_b);
+            builder.edge("first", "first_a");
+            builder.edge("first", "first_b");
 
-            builder.edge(first_a, second);
-            builder.edge(first_b, second);
+            builder.edge("first_a", "second");
+            builder.edge("first_b", "second");
 
             builder.build()
         })

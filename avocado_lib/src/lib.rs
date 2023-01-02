@@ -34,14 +34,14 @@ pub mod incl {
     };
 
     #[cfg(feature = "graphics")]
-    pub use image::{
+    pub use ::image::{
         self,
         GenericImageView as _,
     };
 
     #[cfg(feature = "winit")]
     pub mod winit {
-        pub use winit::{
+        pub use ::winit::{
             dpi::*,
             error::*,
             event::*,
@@ -52,13 +52,23 @@ pub mod incl {
     }
 
     #[cfg(feature = "winit")]
+    pub use ::wgpu::{
+        include_wgsl,
+        vertex_attr_array,
+    };
+
+    #[cfg(feature = "winit")]
     pub mod wgpu {
-        pub use wgpu::{
+        pub use ::wgpu::{
             *,
+            util::*,
         };
     }
 
-    pub use bevy_ecs::{
+    #[cfg(feature = "winit")]
+    pub use ::wgpu::util::DeviceExt as _;
+
+    pub use ::bevy_ecs::{
         self, prelude::*,
         entity::{
             EntityMap,
@@ -71,7 +81,11 @@ pub mod incl {
             SystemLabelId,
         },
         system::{
-            SystemState, BoxedSystem,
+            lifetimeless::{
+                SRes,
+            },
+            SystemState, BoxedSystem, FunctionSystem,
+            SystemParam, ReadOnlySystemParamFetch, SystemParamItem,
             Command,
             EntityCommands,
         },
@@ -80,68 +94,84 @@ pub mod incl {
         },
     };
 
-    pub use bevy_reflect::{
+    pub use ::bevy_math::{
+        self, prelude::*,
+    };
+
+    pub use ::bevy_reflect::{
         self, prelude::*,
         TypeUuid, TypeUuidDynamic as TypeUuidDyn,
     };
 
-    pub use bevy_tasks::{
+    pub use ::bevy_tasks::{
         self, prelude::*,
+        Scope,
         TaskPool, TaskPoolBuilder,
     };
 
-    pub use bevy_utils::{
+    pub use ::bevy_utils::{
         self, prelude::*,
         Entry, HashMap, HashSet,
         Uuid,
         Instant, Duration,
     };
 
-    pub use iyes_loopless::{
+    pub use ::iyes_loopless::{
         self, prelude::*,
     };
 
-    pub use anyhow::{
+    pub use ::anyhow::{
         self,
         Context as _,
     };
 
-    pub use cfg_if::cfg_if;
-    pub use crossbeam_channel::{
+    pub use ::async_channel::{
+        self,
+        Sender as SenderAsync, Receiver as ReceiverAsync,
+    };
+
+    pub use ::bytemuck::{
+        self,
+        Pod, Zeroable,
+    };
+
+    pub use ::cfg_if::cfg_if;
+    pub use ::crossbeam_channel::{
         self,
         Sender, Receiver, TryRecvError,
     };
 
-    pub use derive_more::{
+    pub use ::derive_more::{
         self,
         *,
     };
 
-    pub use downcast_rs::{
+    pub use ::downcast_rs::{
         self,
         impl_downcast,
         Downcast, DowncastSync,
     };
 
-    pub use futures_lite::{
+    pub use ::futures_lite::{
         self,
         future,
     };
 
-    pub use log;
-    pub use parking_lot::{
+    pub use ::log;
+    pub use ::parking_lot::{
         self,
         RwLock,
     };
 
-    pub use thiserror::Error;
+    pub use ::thiserror::Error;
 
-    pub use std::{
+    pub use ::std::{
         any::{
             type_name,
             Any,
         },
         borrow::Cow,
+        cell::UnsafeCell,
         collections::VecDeque,
         env,
         fmt::{
@@ -164,6 +194,10 @@ pub mod incl {
         marker::PhantomData,
         mem,
         num::NonZeroU32,
+        ops::{
+            self,
+            Index,
+        },
         panic::{
             self,
             AssertUnwindSafe,

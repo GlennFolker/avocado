@@ -10,7 +10,6 @@ impl AppExt for App {
         let assets = self.res_mut::<AssetServer>().unwrap().register::<T>();
         self
             .insert_res(assets)
-            .event::<AssetEvent<T>>()
             .sys(AssetStage, AssetServer::update_sys::<T>)
     }
 

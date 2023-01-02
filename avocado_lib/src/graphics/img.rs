@@ -1,6 +1,6 @@
 use crate::incl::*;
 
-#[derive(Debug, TypeUuid)]
+#[derive(Clone, Debug, TypeUuid)]
 #[uuid = "df04defc-ea6d-47dd-83eb-f87086909935"]
 pub struct Image {
     pub width: u32,
@@ -12,7 +12,7 @@ impl Image {
     pub fn new(width: u32, height: u32) -> Self {
         Self {
             width, height,
-            data: Vec::with_capacity((width as usize) * (height as usize)),
+            data: vec![0; (width as usize) * (height as usize) * 4],
         }
     }
 
@@ -29,14 +29,14 @@ impl Image {
     }
 
     pub fn draw(&mut self, other: &Image, x: u32, y: u32) -> &mut Self {
-        let src_row = (other.width.min(self.width - x) * 4) as usize;
-        let dst_row = (self.width * 4) as usize;
+        let src_row = (other.width.min(self.width - x) as usize) * 4;
+        let dst_row = (self.width as usize) * 4;
 
         let end_y = (y + other.height).min(self.height) as usize;
         let y = y as usize;
         for src_y in y..end_y {
             let dst = &mut self.data[(dst_row * src_y)..(dst_row * src_y + src_row)];
-            let src = &other.data[(src_row * (src_y - y))..(src_row * (src_y - (y - 1)))];
+            let src = &other.data[(src_row * (src_y - y))..(src_row * ((src_y - y) + 1))];
             dst.copy_from_slice(src);
         }
 

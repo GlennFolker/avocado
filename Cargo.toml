@@ -63,3 +63,8 @@ required-features = ["log", "core"]
 name = "hello_graphics"
 path = "examples/winit/hello_graphics.rs"
 required-features = ["log", "core", "winit"]
+
+[[example]]
+name = "sprite_batch"
+path = "examples/winit/g2d/sprite_batch.rs"
+required-features = ["log", "core", "winit", "winit_2d"]

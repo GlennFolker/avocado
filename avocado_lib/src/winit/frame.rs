@@ -29,7 +29,6 @@ impl Frame {
     pub fn init_sys(
         mut exit: EventWriter<ExitEvent>,
         mut frame: ResMut<Frame>, surface: Res<SurfaceConfig>, renderer: Res<Renderer>,
-        clear_color: Res<ClearColor>,
     ) {
         let mut frame = frame.bypass_change_detection();
         let output = match surface.surface.get_current_texture() {
@@ -59,25 +58,6 @@ impl Frame {
 
         let output = output.unwrap();
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        let mut encoder = renderer.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Screen clearer"),
-        });
-
-        encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Screen clear"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear((**clear_color).into()),
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: None
-        });
-
-        renderer.queue.submit(iter::once(encoder.finish()));
 
         frame.valid = true;
         frame.output = Some(output);

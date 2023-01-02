@@ -24,7 +24,11 @@ fn main() {
         .render_node::<_, SpriteBatch<1>>(SpriteBatchLabel)
 
         .sys(CoreStage::Update, check)
-        .sys(RenderStage::Begin, resize)
+        .sys(RenderStage::Begin, resize
+            .label(RenderLabel::InitFrame)
+            .after(RenderLabel::PrepareFrame)
+        )
+
         .run();
 }
 
@@ -68,7 +72,7 @@ fn check(
     mut commands: Commands,
     mut atlas: ResMut<AtlasHandle>, mut atlases: ResMut<Assets<TextureAtlas>>,
 
-    mut global_camera: ResMut<GlobalCamera>, window: NonSend<WinitWindow>,
+    mut global_camera: ResMut<GlobalCamera>, surface: Res<SurfaceConfig>,
 ) {
     if !events.is_empty() {
         events.clear();
@@ -76,7 +80,7 @@ fn check(
         let handle = atlas.take().unwrap();
         let atlas = atlases.remove(handle).unwrap();
 
-        let winit::PhysicalSize { width, height, } = window.inner_size().cast::<f32>();
+        let winit::PhysicalSize { width, height, } = surface.size.cast::<f32>();
         global_camera.entity = commands.spawn(Camera {
             position: Vec3 { x: -0., y: -0., z: 10., },
             near: -5.,
@@ -111,9 +115,9 @@ fn check(
 
 fn resize(
     mut graph: ResMut<RenderGraph>, renderer: Res<Renderer>, mut cameras: Query<&mut Camera>,
-    window: NonSend<WinitWindow>,
+    surface: Res<SurfaceConfig>,
 ) {
-    let winit::PhysicalSize { width, height, } = window.inner_size();
+    let winit::PhysicalSize { width, height, } = surface.size;
     graph.output_mut(SpriteBatchLabel).buffer.resize(&renderer, width, height);
 
     let (width, height) = (width as f32, height as f32);

@@ -30,7 +30,9 @@ impl WinitRunner {
 
         let (device, queue) = match future::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
-                features: adapter.features(),
+                features:
+                    wgpu::Features::TEXTURE_BINDING_ARRAY |
+                    wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
                 limits: adapter.limits(),
                 label: None,
             },

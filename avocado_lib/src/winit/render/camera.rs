@@ -103,8 +103,7 @@ impl GlobalCamera {
             });
 
             renderer.queue.write_buffer(
-                &global_camera.buffer,
-                0 as wgpu::BufferAddress,
+                &global_camera.buffer, 0,
                 bytemuck::cast_slice(global_camera.proj.as_ref().unwrap().as_ref()),
             );
         }

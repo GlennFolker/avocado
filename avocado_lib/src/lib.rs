@@ -163,6 +163,11 @@ pub mod incl {
         RwLock,
     };
 
+    pub use ::smallvec::{
+        self,
+        SmallVec,
+    };
+
     pub use ::thiserror::Error;
 
     pub use ::std::{
@@ -173,6 +178,7 @@ pub mod incl {
         borrow::Cow,
         cell::UnsafeCell,
         collections::VecDeque,
+        cmp::Ordering,
         env,
         fmt::{
             self,

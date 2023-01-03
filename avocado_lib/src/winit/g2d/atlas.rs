@@ -30,17 +30,16 @@ pub struct AtlasRegion {
     pub v2: f32,
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct Sprite {
+#[derive(Debug)]
+pub struct Sprite<T: SpriteVertex> {
     pub region: AtlasRegion,
     pub color: Color,
-    pub trns: SpriteTransform,
-    pub mask: u32,
+    pub desc: SpriteDesc<T>,
 }
 
-#[derive(Component, Clone)]
-pub struct SpriteHolder {
-    pub sprites: Vec<Sprite>,
+#[derive(Component)]
+pub struct SpriteHolder<T: SpriteVertex> {
+    pub sprites: Vec<Sprite<T>>,
 }
 
 /// Necessary data for texture atlas building. Given image handles must be strong otherwise a panic is expected.

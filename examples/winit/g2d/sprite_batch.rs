@@ -6,10 +6,23 @@ struct AtlasHandle(Option<Handle<TextureAtlas>>);
 #[derive(SystemLabel)]
 struct SpriteBatchLabel;
 
+#[derive(Resource, Default, Deref, DerefMut)]
+struct FPS(usize);
+
+#[derive(StageLabel)]
+struct Poll;
+
+const INTERVAL: f64 = 1.0;
+const SECS: u64 = Time::secs(INTERVAL);
+const NANOS: u32 = Time::nanos(INTERVAL);
+type PollUpdate = FixedUpdate<SECS, NANOS>;
+
 fn main() {
     App::new()
         .init::<AVocado>()
         .init_res::<AtlasHandle>()
+
+        .init::<SpriteBatch<DefSpriteVertex>>()
 
         .insert_res({
             let mut builder = AssetGraphBuilder::default();
@@ -21,9 +34,13 @@ fn main() {
             builder.build()
         })
 
-        .render_node::<_, SpriteBatch<1>>(SpriteBatchLabel)
+        .init_res::<FPS>()
+        .fixed_timestep::<SECS, NANOS>(CoreStage::Update, Poll, SystemStage::parallel())
+        .sys(CoreStage::Update, incr)
+        .sys(Poll, poll.run_if(PollUpdate::qualified_sys))
 
         .sys(CoreStage::Update, check)
+        .sys(CoreStage::Update, behave)
         .sys(RenderStage::Begin, resize
             .label(RenderLabel::InitFrame)
             .after(RenderLabel::PrepareFrame)
@@ -67,12 +84,21 @@ fn load_atlas(
     Ok(vec![handle.as_dyn()])
 }
 
+fn incr(mut frame: ResMut<FPS>) {
+    **frame += 1;
+}
+
+fn poll(mut frame: ResMut<FPS>) {
+    log::info!("FPS: {}", **frame);
+    **frame = 0;
+}
+
 fn check(
     events: EventReader<AssetGraphDoneEvent>,
     mut commands: Commands,
     mut atlas: ResMut<AtlasHandle>, mut atlases: ResMut<Assets<TextureAtlas>>,
-
-    mut global_camera: ResMut<GlobalCamera>, surface: Res<SurfaceConfig>,
+    mut graph: ResMut<RenderGraph>, mut global_camera: ResMut<GlobalCamera>,
+    renderer: Res<Renderer>, surface: Res<SurfaceConfig>,
 ) {
     if !events.is_empty() {
         events.clear();
@@ -89,27 +115,44 @@ fn check(
         }).id();
 
         commands.spawn(SpriteHolder {
-            sprites: vec![Sprite {
+            sprites: vec![Sprite::<DefSpriteVertex> {
                 region: atlas.region(Path::new("ball.png")),
                 color: Color::rgb(1., 1., 1.),
-                trns: SpriteTransform {
-                    x: -32.,
-                    y: -32.,
+                desc: SpriteDesc::Transform {
+                    pos: Vec2::splat(-64.),
                     z: 0.,
-
-                    pivot_x: 32.,
-                    pivot_y: 32.,
-
-                    width: 64.,
-                    height: 64.,
-
+                    anchor: Vec2::splat(64.),
+                    size: Vec2::splat(128.),
                     rotation: 0.,
+                    data: (),
                 },
-                mask: !0,
             }]
         });
 
         commands.insert_resource(atlas);
+
+        graph.node::<SpriteBatch<DefSpriteVertex>>(SpriteBatchLabel, &renderer);
+    }
+}
+
+fn behave(time: Res<Time>, mut holders: Query<&mut SpriteHolder<DefSpriteVertex>>) {
+    let (sin, cos) = (time.elapsed_sec() as f32).sin_cos();
+    let new_pos = Vec2 { x: cos * 256. - 64., y: sin * 256. - 64. };
+    let delta = time.delta_sec() as f32 * 60.;
+
+    for mut holder in &mut holders {
+        for sprite in &mut holder.sprites {
+            let SpriteDesc::Transform {
+                pos,
+                rotation,
+                ..
+            } = &mut sprite.desc else {
+                continue;
+            };
+
+            *pos = new_pos;
+            *rotation += delta;
+        }
     }
 }
 
@@ -118,7 +161,9 @@ fn resize(
     surface: Res<SurfaceConfig>,
 ) {
     let winit::PhysicalSize { width, height, } = surface.size;
-    graph.output_mut(SpriteBatchLabel).buffer.resize(&renderer, width, height);
+    if let Some(output) = graph.output_mut(SpriteBatchLabel) {
+        output.buffer.resize(&renderer, width, height);
+    }
 
     let (width, height) = (width as f32, height as f32);
     for mut camera in &mut cameras {

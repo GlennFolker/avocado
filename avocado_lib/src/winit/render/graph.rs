@@ -143,10 +143,10 @@ impl RenderState {
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },
-            fragment: Some(wgpu::FragmentState { // 3.
+            fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState { // 4.
+                targets: &[Some(wgpu::ColorTargetState {
                     format: surface.config.format,
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
@@ -182,6 +182,7 @@ impl RenderState {
 pub struct RenderGraph {
     nodes: Vec<Box<dyn RenderNodeDyn>>,
     labels: HashMap<SystemLabelId, usize>,
+    uninitialized: Vec<usize>,
     done_channel: DoneChannel,
 
     ran: HashSet<usize>,
@@ -192,6 +193,10 @@ pub struct RenderGraph {
 }
 
 impl RenderGraph {
+    pub fn begin_sys(world: &mut World) {
+        world.resource_scope(|world, mut graph: Mut<Self>| graph.begin(world));
+    }
+
     pub fn render_sys(world: &mut World) {
         world.resource_scope(|world, graph: Mut<Self>| unsafe {
             let graph = mem::transmute::<_, &'static mut Self>(graph.into_inner());
@@ -199,40 +204,37 @@ impl RenderGraph {
         });
     }
 
-    pub fn output(&self, label: impl SystemLabel) -> &RenderOutput {
-        self.nodes[self.labels[&label.as_label()]].output()
+    pub fn output(&self, label: impl SystemLabel) -> Option<&RenderOutput> {
+        match self.labels.get(&label.as_label()) {
+            Some(index) => Some(self.nodes[*index].output()),
+            None => None,
+        }
     }
 
-    pub fn output_mut(&mut self, label: impl SystemLabel) -> &mut RenderOutput {
-        self.nodes[self.labels[&label.as_label()]].output_mut()
+    pub fn output_mut(&mut self, label: impl SystemLabel) -> Option<&mut RenderOutput> {
+        match self.labels.get_mut(&label.as_label()) {
+            Some(index) => Some(self.nodes[*index].output_mut()),
+            None => None,
+        }
     }
 
-    pub fn node<RenderParam, Desc>(
-        &mut self, world: &mut World, schedule: &mut Schedule,
-        label: impl SystemLabel,
-    ) where
-        RenderParam: 'static + SystemParam,
-        <RenderParam as SystemParam>::Fetch: ReadOnlySystemParamFetch,
-
-        Desc: RenderNodeDesc<RenderParam = RenderParam>,
+    pub fn node<Desc>(&mut self, label: impl SystemLabel, renderer: &Renderer) where
+        Desc: RenderNodeDesc,
+        <Desc as RenderNodeDesc>::Param: SystemParam,
+        <<Desc as RenderNodeDesc>::Param as SystemParam>::Fetch: ReadOnlySystemParamFetch,
     {
         let label = label.as_label();
         let index = self.nodes.len();
 
         if self.labels.insert(label, index).is_some() {
-            panic!("Render node {:?} is already occupied.", label);
+            panic!("Render node {:?} is already occupied", label);
         }
 
-        let mut node = RenderNode::<RenderParam, Desc>::new(
-            label,
-            world.resource::<Renderer>(),
+        self.uninitialized.push(index);
+        self.nodes.push(Box::new(RenderNode::<Desc>::new(
+            label, renderer,
             self.done_channel.sender.clone(),
-        );
-
-        node.render_sys.initialize(world);
-
-        Desc::init(world, schedule);
-        self.nodes.push(Box::new(node));
+        )));
     }
 
     pub fn edge(&mut self, parent_label: impl SystemLabel, child_label: impl SystemLabel) {
@@ -268,7 +270,22 @@ impl RenderGraph {
         self.nodes[*parent].children_mut().push(*child);
     }
 
+    pub fn begin(&mut self, world: &mut World) {
+        if !self.uninitialized.is_empty() {
+            for i in 0..self.uninitialized.len() {
+                let uninit = self.uninitialized[i];
+                self.nodes[uninit].init(world);
+            }
+
+            self.uninitialized.clear();
+        }
+    }
+
     pub fn render(&'static mut self, world: &World) {
+        if !self.uninitialized.is_empty() {
+            return;
+        }
+
         let frame = world.resource::<Frame>();
         if !frame.valid {
             return;
@@ -418,6 +435,8 @@ impl RenderGraph {
 }
 
 trait RenderNodeDyn: 'static + Send + Sync {
+    fn init(&mut self, world: &mut World);
+
     fn unzip_input(&mut self) -> (
         &mut RenderOutput,
         &mut dyn System<In = RenderInput, Out = ()>,
@@ -437,11 +456,10 @@ trait RenderNodeDyn: 'static + Send + Sync {
     fn children_mut(&mut self) -> &mut Vec<usize>;
 }
 
-struct RenderNode<RenderParam, Desc> where
-    RenderParam: 'static + SystemParam,
-    <RenderParam as SystemParam>::Fetch: ReadOnlySystemParamFetch,
-
-    Desc: RenderNodeDesc<RenderParam = RenderParam>,
+struct RenderNode<Desc> where
+    Desc: RenderNodeDesc,
+    <Desc as RenderNodeDesc>::Param: SystemParam,
+    <<Desc as RenderNodeDesc>::Param as SystemParam>::Fetch: ReadOnlySystemParamFetch,
 {
     label: SystemLabelId,
     output: RenderOutput,
@@ -453,14 +471,13 @@ struct RenderNode<RenderParam, Desc> where
     parents: Vec<usize>,
     children: Vec<usize>,
 
-    marker: PhantomData<fn() -> (RenderParam, Desc)>,
+    marker: PhantomData<fn() -> Desc>,
 }
 
-impl<RenderParam, Desc> RenderNode<RenderParam, Desc> where
-    RenderParam: 'static + SystemParam,
-    <RenderParam as SystemParam>::Fetch: ReadOnlySystemParamFetch,
-
-    Desc: RenderNodeDesc<RenderParam = RenderParam>,
+impl<Desc> RenderNode<Desc> where
+    Desc: RenderNodeDesc,
+    <Desc as RenderNodeDesc>::Param: SystemParam,
+    <<Desc as RenderNodeDesc>::Param as SystemParam>::Fetch: ReadOnlySystemParamFetch,
 {
     pub fn new(label: SystemLabelId, renderer: &Renderer, done_sender: SenderAsync<usize>) -> Self {
         Self {
@@ -479,13 +496,17 @@ impl<RenderParam, Desc> RenderNode<RenderParam, Desc> where
     }
 }
 
-impl<RenderParam, Desc>
-RenderNodeDyn for RenderNode<RenderParam, Desc> where
-    RenderParam: 'static + SystemParam,
-    <RenderParam as SystemParam>::Fetch: ReadOnlySystemParamFetch,
-
-    Desc: RenderNodeDesc<RenderParam = RenderParam>,
+impl<Desc> RenderNodeDyn for RenderNode<Desc> where
+    Desc: RenderNodeDesc,
+    <Desc as RenderNodeDesc>::Param: SystemParam,
+    <<Desc as RenderNodeDesc>::Param as SystemParam>::Fetch: ReadOnlySystemParamFetch,
 {
+    #[inline]
+    fn init(&mut self, world: &mut World) {
+        self.render_sys.initialize(world);
+        Desc::init(world);
+    }
+
     #[inline]
     fn unzip_input(&mut self) -> (
         &mut RenderOutput,
@@ -539,11 +560,11 @@ RenderNodeDyn for RenderNode<RenderParam, Desc> where
 }
 
 pub trait RenderNodeDesc: 'static where
-    Self::RenderParam: 'static + SystemParam,
-    <Self::RenderParam as SystemParam>::Fetch: ReadOnlySystemParamFetch,
+    Self::Param: 'static + SystemParam,
+    <Self::Param as SystemParam>::Fetch: ReadOnlySystemParamFetch,
 {
-    type RenderParam;
+    type Param;
 
-    fn init(world: &mut World, schedule: &mut Schedule);
-    fn render_sys(input: In<RenderInput>, param: SystemParamItem<Self::RenderParam>);
+    fn init(world: &mut World);
+    fn render_sys(input: In<RenderInput>, param: SystemParamItem<Self::Param>);
 }

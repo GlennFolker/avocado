@@ -55,6 +55,8 @@ impl<T: Asset> Assets<T> {
         Handle::strong(handle_path, self.ref_change.clone())
     }
 
+    /// Useful if you want to load a resource asynchronously and then take ownership of it, e.g. to store it
+    /// as a `[bevy_ecs::Resource]`.
     #[inline]
     pub fn remove(&mut self, handle: Handle<T>) -> Result<T, Handle<T>> {
         if self.count(&handle.handle_path) > 1 || !self.assets.contains_key(&handle.handle_path) {

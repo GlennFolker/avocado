@@ -19,7 +19,6 @@ pub use config::*;
 pub use event::*;
 pub use ext::{
     ColorExt as _,
-    AppExt as _,
 };
 pub use frame::*;
 pub use res::*;
@@ -41,6 +40,7 @@ impl Subsystem for WinitSubsystem {
                 .with_system(GlobalCamera::update_sys
                     .label(RenderLabel::ComputeGlobalCamera)
                 )
+                .with_system(RenderGraph::begin_sys.at_end())
             )
 
             .stage(RenderStage::Queue, SystemStage::parallel())
@@ -67,7 +67,9 @@ impl Subsystem for WinitSubsystem {
             .event::<ResumeEvent>()
 
             .asset::<Texture>()
-            .asset_loader::<Texture>(TextureLoader);
+            .asset::<Shader>()
+            .asset_loader::<Texture>(TextureLoader)
+            .asset_loader::<Shader>(ShaderLoader);
 
         #[cfg(feature = "winit_2d")]
         app.init::<Winit2dSubsystem>();

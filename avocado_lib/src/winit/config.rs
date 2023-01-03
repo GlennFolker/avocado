@@ -120,7 +120,7 @@ impl Default for WindowConfig {
             transparent: false,
             decorations: true,
             always_on_top: false,
-            vsync: false,
+            vsync: true,
         }
     }
 }

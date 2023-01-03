@@ -453,6 +453,8 @@ impl<T: SpriteVertex> RenderNodeDesc for SpriteBatch<T> {
         }
 
         let state = batch.state.as_ref().unwrap();
+        let mut first = true;
+
         for (vertices, indices, vert_len, ind_len) in &batch.buffer_data {
             if *vert_len <= 0 || *ind_len <= 0 {
                 break;
@@ -479,7 +481,12 @@ impl<T: SpriteVertex> RenderNodeDesc for SpriteBatch<T> {
                         view: &node.output.buffer.colors[0].view,
                         resolve_target: None,
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+                            load: if first {
+                                first = false;
+                                wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT)
+                            } else {
+                                wgpu::LoadOp::Load
+                            },
                             store: true,
                         },
                     })],

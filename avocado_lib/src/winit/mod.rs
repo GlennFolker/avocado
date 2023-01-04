@@ -5,6 +5,7 @@ mod g2d;
 #[cfg(feature = "winit_2d")]
 pub use g2d::*;
 
+pub mod input;
 pub mod render;
 
 mod config;

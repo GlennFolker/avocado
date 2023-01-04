@@ -2,9 +2,13 @@ use crate::incl::*;
 
 mod atlas;
 mod batch;
+mod batch_conf;
+mod vert;
 
 pub use atlas::*;
 pub use batch::*;
+pub use batch_conf::*;
+pub use vert::*;
 
 pub struct Winit2dSubsystem;
 impl Subsystem for Winit2dSubsystem {

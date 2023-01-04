@@ -30,6 +30,7 @@ pub mod incl {
     #[cfg(feature = "winit")]
     pub use crate::winit::{
         *,
+        input::*,
         render::*,
     };
 

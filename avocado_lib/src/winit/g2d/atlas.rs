@@ -37,6 +37,49 @@ pub struct Sprite<T: SpriteVertex> {
     pub desc: SpriteDesc<T>,
 }
 
+#[derive(Debug)]
+pub enum SpriteDesc<T: SpriteVertex> {
+    Direct {
+        z: f32,
+        vertices: SmallVec<[T; 4]>,
+        indices: SmallVec<[u16; 6]>,
+    },
+    Transform {
+        pos: Vec2,
+        z: f32,
+        anchor: Vec2,
+        size: Vec2,
+        rotation: f32,
+        data: T::Data,
+    },
+}
+
+impl<T: SpriteVertex> SpriteDesc<T> {
+    #[inline]
+    pub fn z(&self) -> f32 {
+        match self {
+            Self::Direct { z, .. } => *z,
+            Self::Transform { z, .. } => *z,
+        }
+    }
+
+    #[inline]
+    pub fn vert_len(&self) -> u16 {
+        (match self {
+            Self::Direct { vertices, .. } => vertices.len(),
+            Self::Transform { .. } => 4,
+        }) as u16
+    }
+
+    #[inline]
+    pub fn ind_len(&self) -> u32 {
+        (match self {
+            Self::Direct { indices, .. } => indices.len(),
+            Self::Transform { .. } => 6,
+        }) as u32
+    }
+}
+
 #[derive(Component)]
 pub struct SpriteHolder<T: SpriteVertex> {
     pub sprites: Vec<Sprite<T>>,

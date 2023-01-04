@@ -63,8 +63,13 @@ impl WinitRunner {
     }
 
     pub fn run(mut app: App) -> ! {
-        let exit = Arc::default();
-        app.exit_handle(Arc::clone(&exit));
+        #[derive(Default)]
+        struct State {
+            exit: Arc<RwLock<Option<ExitReason>>>,
+        }
+
+        let mut state = Some(State::default());
+        app.exit_handle(Arc::clone(&state.as_ref().unwrap().exit));
 
         let event_loop = app.remove_res_ns::<EventLoop>().unwrap().0;
         event_loop.run(move |event, _, control_flow| {
@@ -77,29 +82,46 @@ impl WinitRunner {
                         world.send_event(ResumeEvent);
                     }
                 },
-                winit::Event::WindowEvent { window_id, ref event } => {
+                winit::Event::WindowEvent { window_id, event } => {
                     if window_id == window.id() {
-                        match *event {
+                        match event {
                             winit::WindowEvent::Resized(size) => world.send_event(WindowResizedEvent(size)),
                             winit::WindowEvent::Moved(pos) => world.send_event(WindowMovedEvent(pos)),
                             winit::WindowEvent::CloseRequested => {
                                 world.send_event(ExitEvent::graceful());
                                 world.send_event(SuspendEvent);
                             },
-                            _ => {}
+                            winit::WindowEvent::KeyboardInput {
+                                input: winit::KeyboardInput {
+                                    state, virtual_keycode, ..
+                                },
+                                ..
+                            } => if let Some(vkey) = virtual_keycode && let Ok(key) = vkey.try_into() {
+                                world.send_event(KeyboardEvent {
+                                    pressed: state == winit::ElementState::Pressed,
+                                    key,
+                                });
+                            },
+                            winit::WindowEvent::ModifiersChanged(state) => world.send_event(KeyModifierEvent {
+                                alt: state.alt(),
+                                ctrl: state.ctrl(),
+                                logo: state.logo(),
+                                shift: state.shift(),
+                            }),
+                            _ => {},
                         }
                     }
                 },
                 winit::Event::MainEventsCleared => {
                     schedule.run(world);
 
-                    let exit = exit.read();
+                    let exit = state.as_ref().unwrap().exit.read();
                     let exit_code = match &*exit {
                         Some(ExitReason::Graceful) => {
                             log::info!("App exited gracefully");
                             Some(0)
                         },
-                        Some(ExitReason::Error(ref msg)) => {
+                        Some(ExitReason::Error(msg)) => {
                             log::error!("App crashed: {}", msg);
                             Some(1)
                         },
@@ -113,6 +135,8 @@ impl WinitRunner {
                 winit::Event::LoopDestroyed => {
                     let app = mem::replace(&mut app, App::empty());
                     drop(app);
+
+                    state = None;
                 },
                 _ => {},
             }

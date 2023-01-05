@@ -29,8 +29,8 @@ pub use runner::*;
 pub use sys::*;
 
 pub mod re_exports {
-    pub use wgpu;
-    pub use winit;
+    pub use ::wgpu;
+    pub use ::winit;
 }
 
 pub mod prelude {

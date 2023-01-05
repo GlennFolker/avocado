@@ -24,9 +24,9 @@ pub use sys::*;
 pub use time::*;
 
 pub mod re_exports {
-    pub use bevy_ecs;
-    pub use bevy_tasks;
-    pub use iyes_loopless;
+    pub use ::bevy_ecs;
+    pub use ::bevy_tasks;
+    pub use ::iyes_loopless;
 }
 
 pub mod prelude {

@@ -8,7 +8,7 @@ pub use color::*;
 pub use img::*;
 
 pub mod re_exports {
-    pub use image;
+    pub use ::image;
 }
 
 pub mod prelude {

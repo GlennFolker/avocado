@@ -1,37 +1,59 @@
+use avocado_core::{
+    App, Subsystem,
+};
+
 #[cfg(feature = "asset")]
-use avocado_asset::prelude::*;
+pub mod asset {
+    pub use avocado_asset::prelude::*;
+}
 #[cfg(feature = "core")]
-use avocado_core::prelude::*;
+pub mod core {
+    pub use avocado_core::prelude::*;
+}
 #[cfg(feature = "g2d")]
-use avocado_g2d::prelude::*;
+pub mod g2d {
+    pub use avocado_g2d::prelude::*;
+}
 #[cfg(feature = "graphics")]
-use avocado_graphics::prelude::*;
+pub mod graphics {
+    pub use avocado_graphics::prelude::*;
+}
 #[cfg(feature = "input")]
-use avocado_input::prelude::*;
+pub mod input {
+    pub use avocado_input::prelude::*;
+}
 #[cfg(feature = "log")]
-use avocado_log::prelude::*;
+pub mod log {
+    pub use avocado_log::prelude::*;
+}
+#[cfg(feature = "utils")]
+pub mod utils {
+    pub use avocado_utils::prelude::*;
+}
 #[cfg(feature = "winit")]
-use avocado_winit::prelude::*;
+pub mod winit {
+    pub use avocado_winit::prelude::*;
+}
 
 pub mod prelude {
     pub use crate::AVocado;
 
     #[cfg(feature = "asset")]
-    pub use avocado_asset::prelude::*;
+    pub use crate::asset::*;
     #[cfg(feature = "core")]
-    pub use avocado_core::prelude::*;
+    pub use crate::core::*;
     #[cfg(feature = "g2d")]
-    pub use avocado_g2d::prelude::*;
+    pub use crate::g2d::*;
     #[cfg(feature = "graphics")]
-    pub use avocado_graphics::prelude::*;
+    pub use crate::graphics::*;
     #[cfg(feature = "input")]
-    pub use avocado_input::prelude::*;
+    pub use crate::input::*;
     #[cfg(feature = "log")]
-    pub use avocado_log::prelude::*;
+    pub use crate::log::*;
     #[cfg(feature = "utils")]
-    pub use avocado_utils::prelude::*;
+    pub use crate::utils::*;
     #[cfg(feature = "winit")]
-    pub use avocado_winit::prelude::*;
+    pub use crate::winit::*;
 }
 
 pub struct AVocado;
@@ -40,17 +62,17 @@ pub struct AVocado;
 impl Subsystem for AVocado {
     fn init(app: &mut App) {
         #[cfg(feature = "log")]
-        app.init::<LogSubsystem>();
+        app.init::<log::LogSubsystem>();
 
-        app.init::<CoreSubsystem>();
+        app.init::<core::CoreSubsystem>();
 
         #[cfg(feature = "asset")]
-        app.init::<AssetSubsystem>();
+        app.init::<asset::AssetSubsystem>();
         #[cfg(feature = "graphics")]
-        app.init::<GraphicsSubsystem>();
+        app.init::<graphics::GraphicsSubsystem>();
         #[cfg(feature = "winit")]
-        app.init::<WinitSubsystem>();
+        app.init::<winit::WinitSubsystem>();
         #[cfg(feature = "g2d")]
-        app.init::<G2dSubsystem>();
+        app.init::<g2d::G2dSubsystem>();
     }
 }

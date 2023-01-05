@@ -3,20 +3,20 @@ mod bin_pack;
 pub use bin_pack::*;
 
 pub mod re_exports {
-    pub use bevy_math;
-    pub use bevy_reflect;
-    pub use bevy_utils;
+    pub use ::bevy_math;
+    pub use ::bevy_reflect;
+    pub use ::bevy_utils;
 
-    pub use anyhow;
-    pub use async_channel;
-    pub use cfg_if;
-    pub use crossbeam_channel;
-    pub use derive_more;
-    pub use downcast_rs;
-    pub use futures_lite;
-    pub use parking_lot;
-    pub use smallvec;
-    pub use thiserror;
+    pub use ::anyhow;
+    pub use ::async_channel;
+    pub use ::cfg_if;
+    pub use ::crossbeam_channel;
+    pub use ::derive_more;
+    pub use ::downcast_rs;
+    pub use ::futures_lite;
+    pub use ::parking_lot;
+    pub use ::smallvec;
+    pub use ::thiserror;
 }
 
 pub mod prelude {

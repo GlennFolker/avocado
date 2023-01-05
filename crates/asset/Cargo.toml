@@ -1,0 +1,22 @@
+[package]
+name = "avocado_asset"
+version = "0.1.0"
+edition = "2021"
+description = "Asynchronous asset loader for AVocado."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/AvantTeam/avocado"
+
+[features]
+default = [
+    "asset_folder",
+]
+
+asset_folder = []
+asset_embedded = []
+
+[dependencies]
+avocado_core = { path = "../core", version = "0.1.0", default-features = false }
+avocado_utils = { path = "../utils", version = "0.1.0", default-features = false }
+
+log = "0.4"

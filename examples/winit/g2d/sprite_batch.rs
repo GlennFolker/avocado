@@ -1,4 +1,7 @@
-use avocado::incl::*;
+use avocado::prelude::*;
+
+use winit::dpi::PhysicalSize;
+use std::path::Path;
 
 #[derive(Resource, Default, Deref, DerefMut)]
 struct AtlasHandle(Option<Handle<TextureAtlas>>);
@@ -106,7 +109,7 @@ fn check(
         let handle = atlas.take().unwrap();
         let atlas = atlases.remove(handle).unwrap();
 
-        let winit::PhysicalSize { width, height, } = surface.size.cast::<f32>();
+        let PhysicalSize { width, height, } = surface.size.cast::<f32>();
         global_camera.entity = commands.spawn(Camera {
             position: Vec3 { x: -0., y: -0., z: 10., },
             near: -5.,
@@ -160,7 +163,7 @@ fn resize(
     mut graph: ResMut<RenderGraph>, renderer: Res<Renderer>, mut cameras: Query<&mut Camera>,
     surface: Res<SurfaceConfig>,
 ) {
-    let winit::PhysicalSize { width, height, } = surface.size;
+    let PhysicalSize { width, height, } = surface.size;
     if let Some(output) = graph.output_mut(SpriteBatchLabel) {
         output.buffer.resize(&renderer, width, height);
     }

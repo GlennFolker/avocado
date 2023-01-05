@@ -1,254 +1,56 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#[cfg(feature = "asset")]
+use avocado_asset::prelude::*;
+#[cfg(feature = "core")]
+use avocado_core::prelude::*;
+#[cfg(feature = "g2d")]
+use avocado_g2d::prelude::*;
+#[cfg(feature = "graphics")]
+use avocado_graphics::prelude::*;
+#[cfg(feature = "input")]
+use avocado_input::prelude::*;
+#[cfg(feature = "log")]
+use avocado_log::prelude::*;
+#[cfg(feature = "winit")]
+use avocado_winit::prelude::*;
 
-#![feature(const_fn_floating_point_arithmetic)]
-#![feature(div_duration)]
-#![feature(fn_traits)]
-#![feature(inline_const)]
-#![feature(let_chains)]
-#![feature(never_type)]
-
-use incl::*;
-
-pub mod incl {
-    pub use super::{
-        app::*,
-        bin_pack::*,
-        sys::*,
-
-        AVocado,
-    };
+pub mod prelude {
+    pub use crate::AVocado;
 
     #[cfg(feature = "asset")]
-    pub use crate::asset::*;
+    pub use avocado_asset::prelude::*;
     #[cfg(feature = "core")]
-    pub use crate::core::*;
+    pub use avocado_core::prelude::*;
+    #[cfg(feature = "g2d")]
+    pub use avocado_g2d::prelude::*;
     #[cfg(feature = "graphics")]
-    pub use crate::graphics::*;
+    pub use avocado_graphics::prelude::*;
+    #[cfg(feature = "input")]
+    pub use avocado_input::prelude::*;
     #[cfg(feature = "log")]
-    pub use crate::log::*;
-
+    pub use avocado_log::prelude::*;
+    #[cfg(feature = "utils")]
+    pub use avocado_utils::prelude::*;
     #[cfg(feature = "winit")]
-    pub use crate::winit::{
-        *,
-        input::*,
-        render::*,
-    };
-
-    #[cfg(feature = "graphics")]
-    pub use ::image::{
-        self,
-        GenericImageView as _,
-    };
-
-    #[cfg(feature = "winit")]
-    pub mod winit {
-        pub use ::winit::{
-            dpi::*,
-            error::*,
-            event::*,
-            event_loop::*,
-            monitor::*,
-            window::*,
-        };
-    }
-
-    #[cfg(feature = "winit")]
-    pub use ::wgpu::{
-        include_wgsl,
-        vertex_attr_array,
-    };
-
-    #[cfg(feature = "winit")]
-    pub mod wgpu {
-        pub use ::wgpu::{
-            *,
-            util::*,
-        };
-    }
-
-    #[cfg(feature = "winit")]
-    pub use ::wgpu::util::DeviceExt as _;
-
-    pub use ::bevy_ecs::{
-        self, prelude::*,
-        entity::{
-            EntityMap,
-            MapEntities, MapEntitiesError,
-        },
-        event::Event,
-        schedule::{
-            ShouldRun,
-            StageLabel, SystemLabel,
-            SystemLabelId,
-        },
-        system::{
-            lifetimeless::{
-                SRes,
-            },
-            SystemState, BoxedSystem, FunctionSystem,
-            SystemParam, ReadOnlySystemParamFetch, SystemParamItem,
-            Command,
-            EntityCommands,
-        },
-        query::{
-            WorldQuery, ReadOnlyWorldQuery,
-        },
-    };
-
-    pub use ::bevy_math::{
-        self, prelude::*,
-    };
-
-    pub use ::bevy_reflect::{
-        self, prelude::*,
-        TypeUuid, TypeUuidDynamic as TypeUuidDyn,
-    };
-
-    pub use ::bevy_tasks::{
-        self, prelude::*,
-        Scope,
-        TaskPool, TaskPoolBuilder,
-    };
-
-    pub use ::bevy_utils::{
-        self, prelude::*,
-        Entry, HashMap, HashSet,
-        Uuid,
-        Instant, Duration,
-    };
-
-    pub use ::iyes_loopless::{
-        self, prelude::*,
-    };
-
-    pub use ::anyhow::{
-        self,
-        Context as _,
-    };
-
-    pub use ::async_channel::{
-        self,
-        Sender as SenderAsync, Receiver as ReceiverAsync,
-    };
-
-    pub use ::bytemuck::{
-        self,
-        Pod, Zeroable,
-    };
-
-    pub use ::cfg_if::cfg_if;
-    pub use ::crossbeam_channel::{
-        self,
-        Sender, Receiver, TryRecvError,
-    };
-
-    pub use ::derive_more::{
-        self,
-        *,
-    };
-
-    pub use ::downcast_rs::{
-        self,
-        impl_downcast,
-        Downcast, DowncastSync,
-    };
-
-    pub use ::futures_lite::{
-        self,
-        future,
-    };
-
-    pub use ::log;
-    pub use ::parking_lot::{
-        self,
-        RwLock,
-    };
-
-    pub use ::smallvec::{
-        self,
-        SmallVec,
-    };
-
-    pub use ::thiserror::Error;
-
-    pub use ::std::{
-        any::{
-            type_name,
-            Any,
-        },
-        borrow::Cow,
-        cell::UnsafeCell,
-        collections::VecDeque,
-        cmp::Ordering,
-        env,
-        fmt::{
-            self,
-            Debug, Display,
-        },
-        fs::{
-            self,
-            File
-        },
-        hash::{
-            self,
-            Hash, Hasher,
-        },
-        io::{
-            self,
-            Read, Write, Seek,
-        },
-        iter,
-        marker::PhantomData,
-        mem,
-        num::NonZeroU32,
-        ops::{
-            self,
-            Index,
-        },
-        panic::{
-            self,
-            AssertUnwindSafe,
-        },
-        path::{
-            Path, PathBuf,
-        },
-        process,
-        rc::Rc,
-        sync::Arc,
-    };
+    pub use avocado_winit::prelude::*;
 }
 
-#[cfg(feature = "asset")]
-pub mod asset;
-#[cfg(feature = "core")]
-pub mod core;
-#[cfg(feature = "graphics")]
-pub mod graphics;
-#[cfg(feature = "winit")]
-pub mod winit;
-#[cfg(feature = "log")]
-pub mod log;
-
-mod app;
-mod bin_pack;
-mod sys;
-
 pub struct AVocado;
+
+#[cfg(feature = "core")]
 impl Subsystem for AVocado {
     fn init(app: &mut App) {
         #[cfg(feature = "log")]
         app.init::<LogSubsystem>();
 
-        #[cfg(feature = "core")]
         app.init::<CoreSubsystem>();
 
         #[cfg(feature = "asset")]
         app.init::<AssetSubsystem>();
-
         #[cfg(feature = "graphics")]
         app.init::<GraphicsSubsystem>();
-
         #[cfg(feature = "winit")]
         app.init::<WinitSubsystem>();
+        #[cfg(feature = "g2d")]
+        app.init::<G2dSubsystem>();
     }
 }

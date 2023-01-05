@@ -1,4 +1,10 @@
-use avocado::incl::*;
+use avocado::prelude::*;
+
+use std::{
+    borrow::Cow,
+    path::Path,
+    sync::Arc,
+};
 
 #[derive(Debug, TypeUuid)]
 #[uuid = "056db7a3-e928-4ccd-8f20-43fd30f7c465"]
@@ -21,8 +27,6 @@ struct ReceivedMessage(Handle<Message>);
 
 fn main() {
     App::new()
-        .set_runner(App::headless_runner())
-
         .init::<LogSubsystem>()
         .init::<CoreSubsystem>()
         .init::<AssetSubsystem>()

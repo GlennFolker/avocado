@@ -11,6 +11,16 @@ repository = "https://github.com/AvantTeam/avocado"
 
 [workspace]
 resolver = "2"
+members = [
+    "crates/asset",
+    "crates/core",
+    "crates/g2d",
+    "crates/graphics",
+    "crates/input",
+    "crates/log",
+    "crates/utils",
+    "crates/winit",
+]
 
 [lib]
 crate_type = ["lib", "dylib"]
@@ -20,55 +30,43 @@ rustflags = ["-C", "prefer-dynamic"]
 
 [features]
 default = [
-    "log",
-    "core",
     "asset", "asset_folder",
-    "winit", "winit_2d",
+    "core",
+    "graphics", "g2d",
+    "log",
+    "utils",
+    "winit",
 ]
 
-log = ["dep:env_logger"]
-core = []
-graphics = ["dep:image"]
-asset = ["core"]
-asset_folder = ["asset"]
-asset_embedded = ["asset"]
-winit = ["core", "asset", "graphics", "dep:winit", "dep:wgpu"]
-winit_2d = ["winit"]
+asset = ["core", "utils", "avocado_asset"]
+asset_embedded = ["asset", "avocado_asset/asset_embedded"]
+asset_folder = ["asset", "avocado_asset/asset_folder"]
+core = ["utils", "avocado_core"]
+g2d = ["asset", "core", "graphics", "utils", "winit", "avocado_g2d"]
+graphics = ["asset", "core", "utils", "avocado_graphics"]
+log = ["core", "utils", "avocado_log"]
+utils = ["avocado_utils"]
+winit = ["asset", "core", "graphics", "utils", "avocado_winit"]
 
 [dependencies]
-env_logger = { version = "0.9", optional = true }
-image = { version = "0.24", default-features = false, features = ["png"], optional = true }
-winit = { version = "0.27", optional = true }
-wgpu = { version = "0.14", optional = true }
-
-bevy_ecs = "0.9"
-bevy_math = "0.9"
-bevy_ptr = "0.9"
-bevy_reflect = "0.9"
-bevy_tasks = "0.9"
-bevy_utils = "0.9"
-iyes_loopless = { version = "0.9", default-features = false, features = ["states"] }
-
-anyhow = "1.0"
-async-channel = "1.8"
-bytemuck = { version = "1.12", features = ["derive"] }
-cfg-if = "1.0"
-crossbeam-channel = "0.5"
-derive_more = "0.99"
-downcast-rs = "1.2"
-futures-lite = "1.12"
-log = "0.4"
-parking_lot = "0.12"
-smallvec = { version = "1.10", features = ["serde", "union", "const_generics"] }
-thiserror = "1.0"
+avocado_asset = { path = "crates/asset", version = "0.1", default-features = false, optional = true }
+avocado_core = { path = "crates/core", version = "0.1", default-features = false, optional = true }
+avocado_g2d = { path = "crates/g2d", version = "0.1", default-features = false, optional = true }
+avocado_graphics = { path = "crates/graphics", version = "0.1", default-features = false, optional = true }
+avocado_log = { path = "crates/log", version = "0.1", default-features = false, optional = true }
+avocado_utils = { path = "crates/utils", version = "0.1", default-features = false, optional = true }
+avocado_winit = { path = "crates/winit", version = "0.1", default-features = false, optional = true }
 
 [build-dependencies]
 cargo-emit = "0.2"
 
+[dev-dependencies]
+log = "0.4"
+
 [[example]]
 name = "hello_world"
 path = "examples/hello_world.rs"
-required-features = ["log"]
+required-features = ["log", "core"]
 
 [[example]]
 name = "asset_basic"
@@ -93,4 +91,4 @@ required-features = ["log", "core", "winit"]
 [[example]]
 name = "sprite_batch"
 path = "examples/winit/g2d/sprite_batch.rs"
-required-features = ["log", "core", "winit", "winit_2d"]
+required-features = ["log", "core", "winit", "g2d"]

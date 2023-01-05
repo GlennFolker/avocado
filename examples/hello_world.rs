@@ -1,18 +1,15 @@
-use avocado::incl::*;
+use avocado::prelude::*;
 
 fn main() {
-    #[derive(StageLabel)]
-    struct Runtime;
-
     App::new()
         .init::<LogSubsystem>()
+        .init::<CoreSubsystem>()
 
-        .stage(Runtime, SystemStage::parallel())
-        .sys(Runtime, hello_world)
-
+        .sys(CoreStage::Update, hello_world)
         .run()
 }
 
-fn hello_world() {
+fn hello_world(mut exit: EventWriter<ExitEvent>) {
     log::info!("Hello world!");
+    exit.send(ExitEvent::graceful());
 }

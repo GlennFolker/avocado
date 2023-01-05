@@ -1,4 +1,4 @@
-use avocado::incl::*;
+use avocado::prelude::*;
 
 #[derive(Resource, Default)]
 struct FPS(usize);
@@ -13,8 +13,6 @@ type PollUpdate = FixedUpdate<SECS, NANOS>;
 
 fn main() {
     App::new()
-        .set_runner(App::headless_runner())
-
         .init::<LogSubsystem>()
         .init::<CoreSubsystem>()
 

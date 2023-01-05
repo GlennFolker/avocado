@@ -1,4 +1,4 @@
-use avocado::incl::*;
+use avocado::prelude::*;
 
 fn main() {
     App::new()

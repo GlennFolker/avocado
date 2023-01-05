@@ -1,6 +1,10 @@
-#![feature(let_chains)]
+use avocado::prelude::*;
 
-use avocado::incl::*;
+use std::{
+    borrow::Cow,
+    path::Path,
+    sync::Arc,
+};
 
 #[derive(Debug, TypeUuid, Deref, DerefMut)]
 #[uuid = "ae58f163-e781-4a7e-9f6a-8258a5bd672d"]
@@ -26,8 +30,6 @@ struct Secret(Handle<SecretAsset>);
 
 fn main() {
     App::new()
-        .set_runner(App::headless_runner())
-
         .init::<LogSubsystem>()
         .init::<CoreSubsystem>()
         .init::<AssetSubsystem>()

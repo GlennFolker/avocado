@@ -1,0 +1,23 @@
+[package]
+name = "avocado_winit"
+version = "0.1.0"
+edition = "2021"
+description = "Winit and WGPU integration for AVocado."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/AvantTeam/avocado"
+
+[features]
+winit_2d = []
+
+[dependencies]
+avocado_asset = { path = "../asset", version = "0.1.0", default-features = false }
+avocado_core = { path = "../core", version = "0.1.0", default-features = false }
+avocado_graphics = { path = "../graphics", version = "0.1.0", default-features = false }
+avocado_input = { path = "../input", version = "0.1.0", default-features = false }
+avocado_utils = { path = "../utils", version = "0.1.0", default-features = false }
+
+bytemuck = { version = "1.12", features = ["derive"] }
+log = "0.4"
+winit = { version = "0.27" }
+wgpu = { version = "0.14" }

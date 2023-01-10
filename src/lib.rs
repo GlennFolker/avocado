@@ -1,66 +1,93 @@
-use avocado_core::{
-    App, Subsystem,
-};
+#![feature(const_fn_floating_point_arithmetic)]
+#![feature(div_duration)]
+#![feature(let_chains)]
+#![feature(never_type)]
 
 #[cfg(feature = "asset")]
-pub mod asset {
-    pub use avocado_asset::prelude::*;
-}
+pub mod asset;
 #[cfg(feature = "core")]
-pub mod core {
-    pub use avocado_core::prelude::*;
-}
+pub mod core;
 #[cfg(feature = "g2d")]
-pub mod g2d {
-    pub use avocado_g2d::prelude::*;
-}
+pub mod g2d;
 #[cfg(feature = "graphics")]
-pub mod graphics {
-    pub use avocado_graphics::prelude::*;
-}
+pub mod graphics;
 #[cfg(feature = "input")]
-pub mod input {
-    pub use avocado_input::prelude::*;
-}
+pub mod input;
 #[cfg(feature = "log")]
-pub mod log {
-    pub use avocado_log::prelude::*;
-}
-#[cfg(feature = "utils")]
-pub mod utils {
-    pub use avocado_utils::prelude::*;
-}
+pub mod log;
 #[cfg(feature = "winit")]
-pub mod winit {
-    pub use avocado_winit::prelude::*;
+pub mod winit;
+
+pub mod re_exports {
+    pub use ::bevy_math;
+    pub use ::bevy_reflect;
+    pub use ::bevy_utils;
+
+    pub use ::anyhow;
+    pub use ::async_channel;
+    pub use ::cfg_if;
+    pub use ::crossbeam_channel;
+    pub use ::derive_more;
+    pub use ::downcast_rs;
+    pub use ::futures_lite;
+    pub use ::parking_lot;
+    pub use ::smallvec;
+    pub use ::thiserror;
+
+    #[cfg(feature = "core")]
+    pub use crate::core::re_exports::*;
+    #[cfg(feature = "graphics")]
+    pub use crate::graphics::re_exports::*;
+    #[cfg(feature = "log")]
+    pub use crate::log::re_exports::*;
+    #[cfg(feature = "winit")]
+    pub use crate::winit::re_exports::*;
 }
 
 pub mod prelude {
-    pub use crate::AVocado;
+    pub use crate::{
+        re_exports::*,
+        AVocado,
+    };
 
     #[cfg(feature = "asset")]
-    pub use crate::asset::*;
+    pub use crate::asset::prelude::*;
     #[cfg(feature = "core")]
-    pub use crate::core::*;
     #[cfg(feature = "g2d")]
-    pub use crate::g2d::*;
+    pub use crate::g2d::prelude::*;
+    pub use crate::core::prelude::*;
     #[cfg(feature = "graphics")]
-    pub use crate::graphics::*;
+    pub use crate::graphics::prelude::*;
     #[cfg(feature = "input")]
-    pub use crate::input::*;
+    pub use crate::input::prelude::*;
     #[cfg(feature = "log")]
-    pub use crate::log::*;
-    #[cfg(feature = "utils")]
-    pub use crate::utils::*;
+    pub use crate::log::prelude::*;
     #[cfg(feature = "winit")]
-    pub use crate::winit::*;
+    pub use crate::winit::prelude::*;
+
+    pub use bevy_math::prelude::*;
+    pub use bevy_reflect::{
+        prelude::*,
+        TypeUuid,
+    };
+    pub use bevy_tasks::{
+        prelude::*,
+        Scope,
+    };
+    pub use bevy_utils::{
+        prelude::*,
+        Entry, HashMap, HashSet,
+        Uuid,
+        Instant, Duration,
+    };
+    pub use derive_more::*;
 }
 
 pub struct AVocado;
 
 #[cfg(feature = "core")]
-impl Subsystem for AVocado {
-    fn init(app: &mut App) {
+impl core::Subsystem for AVocado {
+    fn init(app: &mut core::App) {
         #[cfg(feature = "log")]
         app.init::<log::LogSubsystem>();
 

@@ -1,5 +1,4 @@
 use avocado::prelude::*;
-
 use std::{
     borrow::Cow,
     path::Path,

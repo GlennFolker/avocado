@@ -8,19 +8,7 @@ description = "2D game framework for personal uses."
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/AvantTeam/avocado"
-
-[workspace]
 resolver = "2"
-members = [
-    "crates/asset",
-    "crates/core",
-    "crates/g2d",
-    "crates/graphics",
-    "crates/input",
-    "crates/log",
-    "crates/utils",
-    "crates/winit",
-]
 
 [lib]
 crate_type = ["lib", "dylib"]
@@ -33,35 +21,57 @@ default = [
     "asset", "asset_folder",
     "core",
     "graphics", "g2d",
+    "input",
     "log",
-    "utils",
     "winit",
 ]
 
-asset = ["core", "utils", "avocado_asset"]
-asset_embedded = ["asset", "avocado_asset/asset_embedded"]
-asset_folder = ["asset", "avocado_asset/asset_folder"]
-core = ["utils", "avocado_core"]
-g2d = ["asset", "core", "graphics", "utils", "winit", "avocado_g2d"]
-graphics = ["asset", "core", "utils", "avocado_graphics"]
-log = ["core", "utils", "avocado_log"]
-utils = ["avocado_utils"]
-winit = ["asset", "core", "graphics", "utils", "avocado_winit"]
+asset = ["core"]
+asset_embedded = ["asset"]
+asset_folder = ["asset"]
+core = ["dep:bevy_ecs", "dep:bevy_tasks", "dep:iyes_loopless"]
+g2d = ["winit"]
+graphics = ["core", "dep:image"]
+input = ["core"]
+log = ["core", "dep:env_logger"]
+winit = ["asset", "graphics", "dep:winit", "dep:wgpu"]
 
 [dependencies]
-avocado_asset = { path = "crates/asset", version = "0.1", default-features = false, optional = true }
-avocado_core = { path = "crates/core", version = "0.1", default-features = false, optional = true }
-avocado_g2d = { path = "crates/g2d", version = "0.1", default-features = false, optional = true }
-avocado_graphics = { path = "crates/graphics", version = "0.1", default-features = false, optional = true }
-avocado_log = { path = "crates/log", version = "0.1", default-features = false, optional = true }
-avocado_utils = { path = "crates/utils", version = "0.1", default-features = false, optional = true }
-avocado_winit = { path = "crates/winit", version = "0.1", default-features = false, optional = true }
+# Common dependencies.
+bevy_math = "0.9"
+bevy_reflect = "0.9"
+bevy_utils = "0.9"
+
+anyhow = "1.0"
+async-channel = "1.8"
+bytemuck = { version = "1.12", features = ["derive"] }
+cfg-if = "1.0"
+crossbeam-channel = "0.5"
+derive_more = "0.99"
+downcast-rs = "1.2"
+futures-lite = "1.12"
+log = "0.4"
+parking_lot = "0.12"
+smallvec = { version = "1.10", features = ["serde", "union"] }
+thiserror = "1.0"
+
+# `core` dependencies.
+bevy_ecs = { version = "0.9", optional = true }
+bevy_tasks = { version = "0.9", optional = true }
+iyes_loopless = { version = "0.9", default-features = false, features = ["states"], optional = true }
+
+# `graphics` dependencies.
+image = { version = "0.24", default-features = false, features = ["png"], optional = true }
+
+# `log` dependencies.
+env_logger = { version = "0.9", optional = true }
+
+# `winit` dependencies.
+winit = { version = "0.27", optional = true }
+wgpu = { version = "0.14", optional = true }
 
 [build-dependencies]
 cargo-emit = "0.2"
-
-[dev-dependencies]
-log = "0.4"
 
 [[example]]
 name = "hello_world"
@@ -90,5 +100,5 @@ required-features = ["log", "core", "winit"]
 
 [[example]]
 name = "sprite_batch"
-path = "examples/winit/g2d/sprite_batch.rs"
+path = "examples/g2d/sprite_batch.rs"
 required-features = ["log", "core", "winit", "g2d"]

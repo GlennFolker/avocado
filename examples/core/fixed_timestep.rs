@@ -1,15 +1,18 @@
 use avocado::prelude::*;
 
-#[derive(Resource, Default)]
-struct FPS(usize);
-
 #[derive(StageLabel)]
 struct Poll;
 
-const INTERVAL: f64 = 1.0;
-const SECS: u64 = Time::secs(INTERVAL);
-const NANOS: u32 = Time::nanos(INTERVAL);
-type PollUpdate = FixedUpdate<SECS, NANOS>;
+#[derive(Resource, Deref, DerefMut)]
+struct PollUpdate(FixedUpdate);
+impl FixedUpdateWrap for PollUpdate {
+    fn new(_: &mut World, updater: FixedUpdate) -> Self {
+        Self(updater)
+    }
+}
+
+#[derive(Resource, Default, Deref, DerefMut)]
+struct FPS(usize);
 
 fn main() {
     App::new()
@@ -17,12 +20,12 @@ fn main() {
         .init::<CoreSubsystem>()
 
         .init_res::<FPS>()
-        .fixed_timestep::<SECS, NANOS>(CoreStage::Update, Poll, SystemStage::parallel())
+        .fixed_timestep_sec::<PollUpdate>(CoreStage::Update, Poll, SystemStage::parallel(), 1.0)
 
         .sys(CoreStage::Update, incr)
-        .sys(Poll, poll.run_if(PollUpdate::qualified_sys))
+        .sys(Poll, poll.run_if(FixedUpdate::qualified_sys::<PollUpdate>))
         .sys(Poll, exit
-            .run_if(PollUpdate::qualified_sys)
+            .run_if(FixedUpdate::qualified_sys::<PollUpdate>)
             .run_if(should_exit)
         )
 
@@ -30,12 +33,12 @@ fn main() {
 }
 
 fn incr(mut frame: ResMut<FPS>) {
-    frame.0 += 1;
+    **frame += 1;
 }
 
 fn poll(mut frame: ResMut<FPS>) {
     log::info!("FPS: {}", frame.0);
-    frame.0 = 0;
+    **frame = 0;
 }
 
 fn exit(mut exit_event: EventWriter<ExitEvent>) {
